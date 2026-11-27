@@ -22,12 +22,13 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-两个包提供账号功能和 DeepSeek 请求鉴权；它们的 README 覆盖日常使用，全部约定以子系统参考为准。
+两个包提供 DeepSeek 账号功能和 DeepSeek 请求鉴权，`copera-account` 提供 Copera Code 登录；它们的 README 覆盖日常使用，DeepSeek 账号的全部约定以子系统参考为准。
 
 | 包 | 角色 | ctx 键 |
 |---|---|---|
 | [`deepseek-account/`](deepseek-account/README.zh.md) | 浏览器登录、已存授权、Platform 资料、余额与通知读取，以及面向允许目标的仅限 Host 的请求凭据 | `ctx.deepseekAccount` |
 | [`deepseek-auth/`](deepseek-auth/README.zh.md) | 面向所有 DeepSeek API 消费方的请求鉴权：按计费方式排定 API 密钥与账号登录的顺序，把每一种绑定到其部署，并释放请求头 | `ctx.deepseekAuth` |
+| [`copera-account/`](copera-account/README.zh.md) | 通过 OAuth 与 PKCE 的 Copera Code 浏览器登录、已存的 Copera 授权，以及 `copera` 模型路由的访问 token | `ctx.coperaAccount`，提供 `ctx.coperaTokens` |
 
 -----
 

@@ -27,6 +27,8 @@ describe('Shipped profile templates', () => {
       headless: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-headless'] },
       sdk: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-sdk-app'] },
       'sdk-minimal': { bundles: ['@deepseek-ai/dsh-sdk-minimal'] },
+      // COPERA: the Copera Code product profile stacks its bundle over the Web composition.
+      copera: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', '@deepseek-ai/dsh-copera-app'] },
     })
   })
 })

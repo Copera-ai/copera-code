@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Copera-Konto",
+    "description": "Meldet sich im Browser bei Copera an und stellt der Copera-Modellroute Zugriffstoken bereit."
+  }
+}

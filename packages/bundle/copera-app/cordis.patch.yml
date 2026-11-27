@@ -1,0 +1,138 @@
+# The dsh-copera-app bundle patch: the Copera Code product layer, applied after
+# dsh-base and dsh-web-app in the `copera` profile. It switches off rows that
+# reach DeepSeek-operated services or show DeepSeek-only surfaces, replaces the
+# config of the rows whose values differ for Copera, and inserts the Copera
+# account service and the `copera` model route.
+#
+# A patch replaces the targeted row's whole `config`, so each override below
+# restates every key of the row it replaces. Patches cannot delete or reorder
+# rows. The Copera brand and sign-in screen rows are inserted by later Copera
+# layers.
+
+# ── telemetry and analytics ──────────────────────────────────────────────────
+
+- id: session-telemetry-otel
+  disabled: true
+
+- id: otel
+  disabled: true
+
+- id: desktop-product-telemetry
+  disabled: true
+
+- id: product-analytics
+  disabled: true
+
+- id: session-log-deepseek
+  disabled: true
+
+- id: plugin-package-inventory-deepseek
+  disabled: true
+
+# ── DeepSeek accounts, model routes, and web providers ──────────────────────
+
+- id: deepseek-llm-api-extensions
+  disabled: true
+
+# Must stay off: copera-account owns `/oauth/callback` on the Host web server.
+- id: deepseek-account
+  disabled: true
+
+- id: deepseek-auth
+  disabled: true
+
+- id: llm-deepseek
+  disabled: true
+
+- id: llm-deepseek-account
+  disabled: true
+
+- id: llm-pi-ai
+  disabled: true
+
+- id: web-search-deepseek
+  disabled: true
+
+- id: web-deepseek-api
+  disabled: true
+
+# ── DeepSeek-only browser surfaces and maintainer context ──────────────────
+
+- id: ui-settings-account
+  disabled: true
+
+- id: ui-account-notifications
+  disabled: true
+
+- id: ui-settings-web-search
+  disabled: true
+
+- id: ui-settings-models
+  disabled: true
+
+- id: ui-brand-official
+  disabled: true
+
+- id: harness-dev-context
+  disabled: true
+
+- id: upstream-skills
+  disabled: true
+
+- id: ui-plugin-manager
+  disabled: true
+
+- id: entry-customization
+  disabled: true
+
+# The "customize DeepSeek Harness" preset.
+- id: preset-cordis
+  disabled: true
+
+# ── Copera values ───────────────────────────────────────────────────────────
+
+- id: agent-default-model
+  config:
+    provider: copera
+    model: shikai
+
+- id: system-prompt
+  config:
+    includeHarnessIdentity: false
+    personaPrefix: You are Copera Code, a coding agent by Copera.
+
+# dsh-base values with the title route pinned to the fast Copera model.
+- id: session-title-llm
+  config:
+    targetWords: 5
+    targetCjkCharacters: 10
+    maxInputBytes: 4096
+    maxOutputTokens: 4096
+    timeoutMs: 60000
+    provider: copera
+    model: shikai-ultra-fast
+
+# No npmmirror fallback registry and one npm file CDN for plugin details.
+- id: plugin-manager
+  config:
+    fallbackRegistries: []
+    detailNpmFileSources:
+      - jsdelivr
+
+- id: ui-theme
+  config:
+    preference: dark
+
+# ── Copera account and model route ──────────────────────────────────────────
+
+# copera-account signs in through the Host web server's `/oauth/callback` and
+# provides `coperaTokens`; llm-copera registers the `copera` route that
+# `agent-default-model` and `session-title-llm` name and authenticates each
+# request with those tokens. Both read the API origin from the launching
+# process's `DSH_COPERA_API_ORIGIN` (default https://api.copera.ai).
+- insert:
+    - id: copera-account
+      name: '@deepseek-ai/dsh-copera-account'
+
+    - id: llm-copera
+      name: '@deepseek-ai/dsh-llm-copera'

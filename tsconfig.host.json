@@ -377,6 +377,8 @@
 
     { "path": "./packages/account/deepseek-account" },
     { "path": "./packages/account/deepseek-auth" },
+    // COPERA: Copera account service.
+    { "path": "./packages/account/copera-account" },
     { "path": "./packages/client/ui-deliverables/tsconfig.host.json" },
     { "path": "./vendor/cosmokit" },
     { "path": "./vendor/schemastery" },
@@ -540,6 +542,8 @@
     { "path": "./packages/llm/llm-deepseek-api-key" },
     { "path": "./packages/llm/llm-deepseek-account" },
     { "path": "./packages/llm/llm-pi-ai" },
+    // COPERA: Copera Shikai model adapter.
+    { "path": "./packages/llm/llm-copera" },
     { "path": "./packages/shell/bash-local" },
     { "path": "./packages/shell/shell-env" },
     { "path": "./packages/shell/pwsh-local" },
@@ -586,6 +590,8 @@
     { "path": "./packages/bundle/sdk-app" },
     { "path": "./packages/bundle/sdk-minimal" },
     { "path": "./packages/bundle/web-app" },
+    // COPERA: Copera Code product bundle.
+    { "path": "./packages/bundle/copera-app" },
     { "path": "./packages/util/official-bundles" },
     { "path": "./packages/boot/app-boot" },
     { "path": "./packages/boot/cmdline" },

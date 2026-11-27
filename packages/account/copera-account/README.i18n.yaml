@@ -1,0 +1,55 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/account/copera-account/README.md
+/:
+  en: fc0c199eb2c3c392
+  zh: af269062667f0473
+/deepseek-ai-dsh-copera-account:
+  en: 565419dc584ed916
+  zh: 68679347202f9668
+/deepseek-ai-dsh-copera-account/summary:
+  en: f6fa1b5f7001d919
+  zh: 93fd18e3a8fda9ba
+/deepseek-ai-dsh-copera-account/table-of-contents:
+  en: 76368b6b1da79c80
+  zh: 434cf3c1f5db33cd
+/deepseek-ai-dsh-copera-account/use-this-package:
+  en: 2957c19998acbfc1
+  zh: 36036e60606f01bf
+/deepseek-ai-dsh-copera-account/use-this-package/when-to-choose-it:
+  en: 2387da1dadd0db54
+  zh: ac47c853850b251f
+/deepseek-ai-dsh-copera-account/use-this-package/minimal-configuration:
+  en: 6dad94fef820f2f2
+  zh: 798c001c4eb7c655
+/deepseek-ai-dsh-copera-account/use-this-package/remote-operations:
+  en: 3a4f7870ac60f54a
+  zh: 96d7a41854e71391
+/deepseek-ai-dsh-copera-account/use-this-package/token-provider:
+  en: 414ff8d5773e8e97
+  zh: ea85cea15b8e2fd7
+/deepseek-ai-dsh-copera-account/understand-the-implementation:
+  en: b0482af66807bdfd
+  zh: f36b6916b070876d
+/deepseek-ai-dsh-copera-account/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-copera-account/model-experience/copera-access-token:
+  en: cb32bcdcdba4e678
+  zh: a9fdd08c39e650f7
+/deepseek-ai-dsh-copera-account/model-experience/copera-access-token/what-the-model-sees:
+  en: 154cbab2abb281e2
+  zh: 0e964adc5ce94c7f
+/deepseek-ai-dsh-copera-account/model-experience/copera-access-token/token-effect:
+  en: 63e852f864e41719
+  zh: 2931dadba3b62c76
+/deepseek-ai-dsh-copera-account/model-experience/copera-access-token/kv-cache-effect:
+  en: aea0a8aff5466015
+  zh: 3c18eb3ffa3933ce
+/deepseek-ai-dsh-copera-account/known-limitations-and-deferred-work:
+  en: 21c408fee970f4bf
+  zh: 099f77b2b22cda94
+/deepseek-ai-dsh-copera-account/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: e88aeb617ffb74ea

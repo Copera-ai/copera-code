@@ -1,0 +1,88 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/bundle/copera-app/README.md
+/:
+  en: 7265986c9f4a000a
+  zh: 183117f6818d0799
+/deepseek-ai-dsh-copera-app:
+  en: b15c555815c7cf6f
+  zh: 8b161699f3d90ee4
+/deepseek-ai-dsh-copera-app/summary:
+  en: 3f3aa92285437112
+  zh: 97e931c0af246c63
+/deepseek-ai-dsh-copera-app/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: fcb8aebace5f460f
+/deepseek-ai-dsh-copera-app/use-this-package:
+  en: bbff250eba0f1b89
+  zh: 0a618f05cc88ee2b
+/deepseek-ai-dsh-copera-app/use-this-package/start-the-profile:
+  en: 372ea78c7580a2f1
+  zh: a19c0d7a14f81ee5
+/deepseek-ai-dsh-copera-app/use-this-package/what-you-get:
+  en: c3c14a9c89dd1aa5
+  zh: da6db099f2f1ed44
+/deepseek-ai-dsh-copera-app/understand-the-implementation:
+  en: a5ce40b664017530
+  zh: d60388244296a8a4
+/deepseek-ai-dsh-copera-app/further-exploration:
+  en: ff25a03b6656432e
+  zh: 2c4f7fa085ef28c3
+/deepseek-ai-dsh-copera-app/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-copera-app/model-experience/copera-code-persona:
+  en: edaa5405d2f4ffa4
+  zh: edaa5405d2f4ffa4
+/deepseek-ai-dsh-copera-app/model-experience/copera-code-persona/what-the-model-sees:
+  en: 198d4aa308a36909
+  zh: 5c32d0e0c4b54a06
+/deepseek-ai-dsh-copera-app/model-experience/copera-code-persona/token-effect:
+  en: 01c8cfe984316552
+  zh: 4ef1d087a116b73c
+/deepseek-ai-dsh-copera-app/model-experience/copera-code-persona/kv-cache-effect:
+  en: 2fb555c2ec011575
+  zh: 9d995ecd6f595dec
+/deepseek-ai-dsh-copera-app/model-experience/web-search-tool-removed:
+  en: 4ec82962d318d746
+  zh: ee86c19c5338a023
+/deepseek-ai-dsh-copera-app/model-experience/web-search-tool-removed/what-the-model-sees:
+  en: 9083ef7e216160ea
+  zh: 345138ee48a972a0
+/deepseek-ai-dsh-copera-app/model-experience/web-search-tool-removed/token-effect:
+  en: cc21271b0c658158
+  zh: 1b3ff434ea168004
+/deepseek-ai-dsh-copera-app/model-experience/web-search-tool-removed/kv-cache-effect:
+  en: ed994ff29744aac7
+  zh: da1d08adb1e8251f
+/deepseek-ai-dsh-copera-app/model-experience/plugin-manager-tool-removed:
+  en: 6e1e4f4738c50782
+  zh: bd42799beb160277
+/deepseek-ai-dsh-copera-app/model-experience/plugin-manager-tool-removed/what-the-model-sees:
+  en: 2cde0880d868d31d
+  zh: 21952856505bcc9f
+/deepseek-ai-dsh-copera-app/model-experience/plugin-manager-tool-removed/token-effect:
+  en: ac039e835f2930ce
+  zh: ad1d4c7ebdcd67aa
+/deepseek-ai-dsh-copera-app/model-experience/plugin-manager-tool-removed/kv-cache-effect:
+  en: ed994ff29744aac7
+  zh: da1d08adb1e8251f
+/deepseek-ai-dsh-copera-app/model-experience/compaction-summaries:
+  en: 77ed12b726428111
+  zh: af67f7cc97dbd9a0
+/deepseek-ai-dsh-copera-app/model-experience/compaction-summaries/what-the-model-sees:
+  en: 8e74380e99ca170f
+  zh: 0c27dcf9c3cfa712
+/deepseek-ai-dsh-copera-app/model-experience/compaction-summaries/token-effect:
+  en: f567aabc358426e4
+  zh: d5b31d09234271c9
+/deepseek-ai-dsh-copera-app/model-experience/compaction-summaries/kv-cache-effect:
+  en: 2cc5f8b390723cc2
+  zh: 2e391d606032cb1b
+/deepseek-ai-dsh-copera-app/known-limitations-and-deferred-work:
+  en: 029df058a002abfe
+  zh: dca20bd1a0662509
+/deepseek-ai-dsh-copera-app/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: e88aeb617ffb74ea

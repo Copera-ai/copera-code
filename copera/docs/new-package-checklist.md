@@ -1,6 +1,6 @@
 # New package checklist (Copera Code)
 
-Checks the upstream gates apply to a new workspace package under `packages/<group>/<pkg>/`. Every rule cites the script that enforces it. Recorded on `copera/v1` at upstream `4b399c39a6`.
+Checks the upstream gates apply to a new workspace package under `packages/<group>/<pkg>/`. Every rule cites the script that enforces it. Recorded on `copera/v1` over the upstream `0.2.3-alpha.2` release.
 
 ## Which command runs which check
 
@@ -30,7 +30,7 @@ Checks the upstream gates apply to a new workspace package under `packages/<grou
 
 - [ ] `tsconfig.json` extends `../../../tsconfig.base.json` (Client packages: `tsconfig.base.client.json`), sets `rootDir: "src"`, `outDir: "lib/types"`, `include: ["src"]`, and references `vendor/cosmokit`, `vendor/cordis`, `vendor/schemastery` when Config is used, and every dsh dependency (docs/cookbook/adding-a-package.md section 1; packages/AGENTS.md).
 - [ ] Add `{ "path": "./packages/<group>/<pkg>" }` to exactly one aggregate: `tsconfig.host.json` (Host) or `tsconfig.client.json` (Client). The Typert generator only analyzes packages listed in these aggregates (packages/typert/generator/src/analyzer.ts:531-545).
-- [ ] Run `pnpm run gen-tsconfig-paths`; it rewrites the generated alias region of `tsconfig.base.json` (scripts/gen-tsconfig-paths.ts:27). `pnpm run verify-tsconfig-paths` fails in `doc-sync` until it is current. This edits an upstream file; log it in `docs/copera/upstream-edits.md`.
+- [ ] Run `pnpm run gen-tsconfig-paths`; it rewrites the generated alias region of `tsconfig.base.json` (scripts/gen-tsconfig-paths.ts:27). `pnpm run verify-tsconfig-paths` fails in `doc-sync` until it is current. This edits an upstream file; log it in `copera/docs/upstream-edits.md`.
 - [ ] Subpath exports such as `./types` or `./client-metadata` need a hand-written alias outside the generated region (see `@deepseek-ai/dsh-deepseek-account/types` at tsconfig.base.json:61). Without it, a generated `lib/typert.remote-client.d.ts` that imports `<pkg>/types` fails with TS2307 (verified with a probe package in B0).
 - [ ] Source rules: explicit `.ts` relative imports; `src/types.ts` holds types only; tests under `tests/`, not `src/__tests__/` (packages/AGENTS.md).
 
@@ -69,7 +69,7 @@ Checks the upstream gates apply to a new workspace package under `packages/<grou
 
 ## 8. Generated catalogs to refresh
 
-Each `verify-*` gate below fails until its generator is rerun after adding a package. All outputs are upstream files; log each regenerated file in `docs/copera/upstream-edits.md`.
+Each `verify-*` gate below fails until its generator is rerun after adding a package. All outputs are upstream files; log each regenerated file in `copera/docs/upstream-edits.md`.
 
 | Generator | Output |
 |---|---|
@@ -101,5 +101,5 @@ Each `verify-*` gate below fails until its generator is rerun after adding a pac
 
 ## 11. Copera-specific notes
 
-- Files under `docs/` are in the bilingual translation scope (scripts/translation-pairing.ts:168). `docs/copera/*.md` without a `.zh.md` and `.i18n.yaml` pair fails `verify-translation-pairing` in `doc-sync`; either add the pair, exclude the files in `scripts/translation-pairing.manifest.json` (upstream edit), or keep these notes outside `docs/`.
+- Files under `docs/` are in the bilingual translation scope (scripts/translation-pairing.ts:168). `docs/copera/*.md` without a `.zh.md` and `.i18n.yaml` pair fails `verify-translation-pairing` in `doc-sync`; either add the pair, exclude the files in `scripts/translation-pairing.manifest.json` (upstream edit), or keep these notes outside `docs/`. Copera notes therefore live in `copera/docs/` at the repository root, which the pairing scope (scripts/translation-pairing.ts:162-168) does not cover.
 - Every allowlist named above (`NO_LIMITATIONS`, `SENTENCE_MODEL_EXPERIENCE`, `PRODUCT_PACKAGE_POLICY`, `GROUPS_WITHOUT_SUBSYSTEM_PAGE`, entrypoint allowlists) is an upstream file. Prefer satisfying the rule over adding an entry.

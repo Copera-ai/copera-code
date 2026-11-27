@@ -1,0 +1,46 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/llm/llm-copera/README.md
+/:
+  en: 422aa337c384d3be
+  zh: 422aa337c384d3be
+/deepseek-ai-dsh-llm-copera:
+  en: aa9466d2a38d990c
+  zh: 2024241adb387ade
+/deepseek-ai-dsh-llm-copera/summary:
+  en: bf48c404beb228d8
+  zh: f2a7337ac4bf8265
+/deepseek-ai-dsh-llm-copera/table-of-contents:
+  en: 23386452a66b2fbd
+  zh: 9a71b7a52fe624ac
+/deepseek-ai-dsh-llm-copera/use-this-package:
+  en: 5dae87e06d2d2288
+  zh: 36cf4fb00d7e2a9b
+/deepseek-ai-dsh-llm-copera/understand-the-implementation:
+  en: b1466fda88084f46
+  zh: 4549491b18be91fe
+/deepseek-ai-dsh-llm-copera/further-exploration:
+  en: 2a483ef29423691e
+  zh: 72e41bc866ff9667
+/deepseek-ai-dsh-llm-copera/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-llm-copera/model-experience/shikai-requests:
+  en: 6bdcb8cf5e8fb281
+  zh: cddef1b38c158da9
+/deepseek-ai-dsh-llm-copera/model-experience/shikai-requests/what-the-model-sees:
+  en: 458ebcafe935af2b
+  zh: 74127f9ea48c31e0
+/deepseek-ai-dsh-llm-copera/model-experience/shikai-requests/token-effect:
+  en: ba4aff8edf904a1a
+  zh: 81f8cf360a2529e1
+/deepseek-ai-dsh-llm-copera/model-experience/shikai-requests/kv-cache-effect:
+  en: 26df915441ffd0ed
+  zh: 7413d3b5dc202c93
+/deepseek-ai-dsh-llm-copera/known-limitations-and-deferred-work:
+  en: 567c4212862146bd
+  zh: 57332a227a631fe1
+/deepseek-ai-dsh-llm-copera/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: e88aeb617ffb74ea

@@ -97,6 +97,9 @@ export const SERVICE_PAGE: Record<string, string> = {
   authorization: 'credentials.md',
   deepseekAccount: 'account.md',
   deepseekAuth: 'account.md',
+  // COPERA: Copera account service and the token source it provides to llm-copera.
+  coperaAccount: 'account.md',
+  coperaTokens: 'account.md',
   credentials: 'credentials.md',
   credentialsController: 'credentials.md',
   settingsController: 'settings.md',
@@ -1132,6 +1135,8 @@ export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
   PatchOptions: 'Include patch entries are owned by vendor/include (vendored upstream)',
   McpResourceProvider: 'scoped resource provider is owned by packages/mcp/mcp-resources/README.md',
   McpAccountRegistration: 'Plugins page account registration is owned by packages/mcp/mcp-account/README.md',
+  // COPERA: Copera sign-in state.
+  CoperaAccountState: 'Copera sign-in state is owned by packages/account/copera-account/README.md',
   'z.ZodType': 'Zod response validation API is owned by https://zod.dev/packages/zod',
   Socket: 'Node.js byte stream API is owned by https://nodejs.org/api/net.html#class-netsocket',
   z: 'schemastery schema constructor is owned by vendor/schemastery (vendored upstream)',

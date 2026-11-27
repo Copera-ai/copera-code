@@ -23,6 +23,10 @@ export const PROFILE_TEMPLATES: Record<string, ProfileTemplate> = {
   'sdk-minimal': {
     bundles: ['@deepseek-ai/dsh-sdk-minimal'],
   },
+  // COPERA: the Copera Code product profile; dsh-copera-app disables DeepSeek rows and sets Copera config.
+  copera: {
+    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', '@deepseek-ai/dsh-copera-app'],
+  },
 }
 
 /**

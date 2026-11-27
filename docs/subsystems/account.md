@@ -28,6 +28,76 @@ Notification queries return an AccountNotificationBatch with the server's nextPo
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
 
+<a id="ctxcoperaaccount--coperaaccount"></a>
+
+### `ctx.coperaAccount` — `CoperaAccount`
+
+Copera sign-in state and operations, exposed to Clients through the `coperaAccount` Remote namespace.
+
+```ts cordis-catalog
+/**
+ * Read the account state.
+ * @returns status, credential source, profile, latest attempt, and notice; never a token.
+ */
+@Remote async getState(): Promise<CoperaAccountState>
+
+/**
+ * Stream the account state, starting with the current state, then once per change; coalesced changes yield the latest state.
+ * @param signal - subscription lifetime; ending it never cancels a sign-in.
+ * @returns complete states until the signal aborts or the service is disposed.
+ */
+@Remote({ mode: 'stream' }) async *watch(signal: AbortSignal): AsyncIterable<CoperaAccountState>
+
+/**
+ * Start a browser sign-in, or join the attempt already waiting on the same callback origin.
+ * @param callbackOrigin - origin of the Host web server as the browser reaches it: `http://127.0.0.1:<port>` or
+ * `http://[::1]:<port>`; `localhost` is refused.
+ * @param loginSource - initiating UI; both receive the same browser pages.
+ * @returns the state with the attempt's authorization URL, without waiting for the browser.
+ * @throws CoperaOriginError for a refused callback origin; Error when the Host web server is not running.
+ */
+@Remote async startSignIn(callbackOrigin: string, loginSource: 'web' | 'desktop'): Promise<CoperaAccountState>
+
+/**
+ * Discard the current attempt; a pending code exchange is aborted and its late callback answers 410.
+ * @returns after the attempt is removed from the state.
+ */
+@Remote cancelSignIn(): Promise<void>
+
+/**
+ * Remove the stored grant, publish the signed-out state, then revoke its refresh and access tokens in the background
+ * with retries. Remote revocation failures never restore the grant. The environment token is not affected.
+ * @returns after the local removal and the state change.
+ */
+@Remote signOut(): Promise<void>
+```
+
+Source: [`packages/account/copera-account/src/index.ts`](../../packages/account/copera-account/src/index.ts)
+
+<a id="ctxcoperatokens--coperatokensource"></a>
+
+### `ctx.coperaTokens` — `CoperaTokenSource`
+
+Supplies the current Copera access token and replaces a token that Shikai rejected. Implementations own storage, refresh, and serialization of concurrent refreshes; the adapter never reads a token from the environment.
+
+```ts cordis-catalog
+/**
+ * Read the access token to send on the next request.
+ * @returns the current access token, or `undefined` when the user is signed out.
+ */
+getAccessToken(): Promise<string | undefined>
+
+/**
+ * Report that Shikai answered 401 for a token and obtain its replacement.
+ * @param rejectedToken - the bearer token that the rejected request carried.
+ * @returns a replacement token, or `undefined` (or the same token) when no
+ * valid token is available and the user must sign in again.
+ */
+onRejected(rejectedToken: string): Promise<string | undefined>
+```
+
+Source: [`packages/llm/llm-copera/src/token-source.ts`](../../packages/llm/llm-copera/src/token-source.ts)
+
 <a id="ctxdeepseekaccount--deepseekaccount"></a>
 
 ### `ctx.deepseekAccount` — `DeepSeekAccount`

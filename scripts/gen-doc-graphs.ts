@@ -557,6 +557,25 @@ const SERVICE_ROLES: ServiceRole[] = [
     consumers: ['llm-deepseek-account', 'llm-deepseek-api-key', 'web-deepseek-api', 'web-search-deepseek'],
     note: 'Every DeepSeek API consumer names the credential kinds its API accepts; the service orders the API key and the account sign-in by billing, binds each to its deployment, and releases request headers.',
   },
+  // COPERA: Copera account service and the access-token seam of the copera model route.
+  {
+    key: 'coperaAccount',
+    pkg: 'copera-account',
+    title: 'Copera account',
+    mode: 'service',
+    implementations: [],
+    consumers: [],
+    note: 'The Host owns the Copera browser sign-in and the stored grant; Clients receive state without tokens through the coperaAccount Remote namespace.',
+  },
+  {
+    key: 'coperaTokens',
+    pkg: 'llm-copera',
+    title: 'Copera access tokens',
+    mode: 'seam',
+    implementations: ['copera-account'],
+    consumers: ['llm-copera'],
+    note: 'The copera model route asks for an access token per request and reports a rejected token once; the provider refreshes the stored grant or falls back to DSH_COPERA_TOKEN.',
+  },
   {
     key: 'authorization',
     pkg: 'authorization',

@@ -886,6 +886,63 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'coperaAccount',
+    summary: 'Copera sign-in state and operations, exposed to Clients through the `coperaAccount` Remote namespace.',
+    description: 'Copera sign-in state and operations, exposed to Clients through the `coperaAccount` Remote namespace.',
+    methods: [
+      {
+        signature: '@Remote async getState(): Promise<CoperaAccountState>',
+        description: 'Read the account state.',
+        parameters: [],
+        returns: 'status, credential source, profile, latest attempt, and notice; never a token.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) async *watch(signal: AbortSignal): AsyncIterable<CoperaAccountState>',
+        description: 'Stream the account state, starting with the current state, then once per change; coalesced changes yield the latest state.',
+        parameters: [{ name: 'signal', description: 'subscription lifetime; ending it never cancels a sign-in.' }],
+        returns: 'complete states until the signal aborts or the service is disposed.',
+      },
+      {
+        signature: '@Remote async startSignIn(callbackOrigin: string, loginSource: \'web\' | \'desktop\'): Promise<CoperaAccountState>',
+        description: 'Start a browser sign-in, or join the attempt already waiting on the same callback origin.',
+        parameters: [{ name: 'callbackOrigin', description: 'origin of the Host web server as the browser reaches it: `http://127.0.0.1:<port>` or `http://[::1]:<port>`; `localhost` is refused.' }, { name: 'loginSource', description: 'initiating UI; both receive the same browser pages.' }],
+        returns: 'the state with the attempt\'s authorization URL, without waiting for the browser.',
+        throws: ['CoperaOriginError for a refused callback origin; Error when the Host web server is not running.'],
+      },
+      {
+        signature: '@Remote cancelSignIn(): Promise<void>',
+        description: 'Discard the current attempt; a pending code exchange is aborted and its late callback answers 410.',
+        parameters: [],
+        returns: 'after the attempt is removed from the state.',
+      },
+      {
+        signature: '@Remote signOut(): Promise<void>',
+        description: 'Remove the stored grant, publish the signed-out state, then revoke its refresh and access tokens in the background with retries. Remote revocation failures never restore the grant. The environment token is not affected.',
+        parameters: [],
+        returns: 'after the local removal and the state change.',
+      },
+    ],
+  },
+  {
+    key: 'coperaTokens',
+    summary: 'Supplies the current Copera access token and replaces a token that Shikai rejected.',
+    description: 'Supplies the current Copera access token and replaces a token that Shikai rejected. Implementations own storage, refresh, and serialization of concurrent refreshes; the adapter never reads a token from the environment.',
+    methods: [
+      {
+        signature: 'getAccessToken(): Promise<string | undefined>',
+        description: 'Read the access token to send on the next request.',
+        parameters: [],
+        returns: 'the current access token, or `undefined` when the user is signed out.',
+      },
+      {
+        signature: 'onRejected(rejectedToken: string): Promise<string | undefined>',
+        description: 'Report that Shikai answered 401 for a token and obtain its replacement.',
+        parameters: [{ name: 'rejectedToken', description: 'the bearer token that the rejected request carried.' }],
+        returns: 'a replacement token, or `undefined` (or the same token) when no valid token is available and the user must sign in again.',
+      },
+    ],
+  },
+  {
     key: 'cotTranslation',
     summary: 'Optional reasoning translation delegates Session-bound storage to the translator.',
     description: 'Optional reasoning translation delegates Session-bound storage to the translator.',
@@ -7133,6 +7190,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ContinuableCreateSpec',
     declaration: 'export interface ContinuableCreateSpec {\n    readonly seed?: readonly SessionEvent[];\n}',
+  },
+  {
+    name: 'CoperaAccountProfile',
+    declaration: 'export interface CoperaAccountProfile {\n    readonly name: string;\n    readonly email: string;\n    readonly workspaceName: string;\n}',
+  },
+  {
+    name: 'CoperaAccountState',
+    declaration: 'export interface CoperaAccountState {\n    readonly status: \'signed-out\' | \'signed-in\';\n    readonly via: \'oauth\' | \'env-token\' | null;\n    readonly profile: CoperaAccountProfile | null;\n    readonly attempt: CoperaSignInAttempt | null;\n    readonly notice: \'session-expired\' | null;\n}',
+  },
+  {
+    name: 'CoperaSignInAttempt',
+    declaration: 'export interface CoperaSignInAttempt {\n    readonly phase: \'awaiting-browser\' | \'denied\' | \'expired\' | \'failed\';\n    readonly authorizeUrl: string;\n    readonly expiresAt: number;\n}',
   },
   {
     name: 'CordisDynamicPackageId',

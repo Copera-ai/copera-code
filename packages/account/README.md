@@ -22,12 +22,13 @@ The `account/` group signs the user in to DeepSeek through the system browser an
 <a id="packages"></a>
 ## Packages
 
-Two packages provide the account feature and DeepSeek request authentication; their READMEs cover day-to-day use, and the subsystem reference owns the exhaustive contracts.
+Two packages provide the DeepSeek account feature and DeepSeek request authentication, and `copera-account` provides the Copera Code sign-in; their READMEs cover day-to-day use, and the subsystem reference owns the exhaustive DeepSeek account contracts.
 
 | Package | Role | ctx key |
 |---|---|---|
 | [`deepseek-account/`](deepseek-account/README.md) | Browser sign-in, the stored grant, Platform profile, balance, and notification reads, and Host-only request credentials for allowed destinations | `ctx.deepseekAccount` |
 | [`deepseek-auth/`](deepseek-auth/README.md) | Request authentication for every DeepSeek API consumer: orders the API key and the account sign-in by billing, binds each to its deployment, and releases request headers | `ctx.deepseekAuth` |
+| [`copera-account/`](copera-account/README.md) | Copera Code browser sign-in with OAuth and PKCE, the stored Copera grant, and the access tokens of the `copera` model route | `ctx.coperaAccount`, provides `ctx.coperaTokens` |
 
 -----
 

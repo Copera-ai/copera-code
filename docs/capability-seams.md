@@ -167,6 +167,10 @@ flowchart LR
   pkg_llm_deepseek_api_key["llm-deepseek-api-key"]
   pkg_web_deepseek_api["web-deepseek-api"]
   pkg_web_search_deepseek["web-search-deepseek"]
+  pkg_copera_account["copera-account"]
+  svc_coperaAccount["ctx.coperaAccount<br/>Copera account"]
+  pkg_llm_copera["llm-copera"]
+  svc_coperaTokens["ctx.coperaTokens<br/>Copera access tokens"]
   pkg_authorization["authorization"]
   svc_authorization["ctx.authorization<br/>Authorization flow registry"]
   pkg_client_product_analytics["client-product-analytics"]
@@ -384,6 +388,8 @@ flowchart LR
   pkg_compaction_tool_result_pruner --> svc_toolResultPruner
   pkg_computer_use --> svc_computerUse
   pkg_config_editor --> svc_configEditor
+  pkg_copera_account --> svc_coperaAccount
+  pkg_copera_account --> svc_coperaTokens
   pkg_cordis_host_runner --> svc_cordisInspect
   pkg_cordis_host_runner --> svc_dynamicCordisRunner
   pkg_credentials --> svc_credentials
@@ -432,6 +438,7 @@ flowchart LR
   pkg_jobs --> svc_jobs
   pkg_jobs_local --> svc_jobs
   pkg_llm --> svc_llm
+  pkg_llm_copera --> svc_coperaTokens
   pkg_llm_deepseek --> svc_llm
   pkg_llm_pi_ai --> svc_llm
   pkg_llm_replay --> svc_llm
@@ -551,6 +558,7 @@ flowchart LR
   svc_connection --> pkg_api_gateway
   svc_connection --> pkg_host_frontend_static
   svc_connection_authentication --> pkg_client_connection
+  svc_coperaTokens --> pkg_llm_copera
   svc_cordisInspect --> pkg_tool_cordis
   svc_credentials --> pkg_api_settings_controller
   svc_credentials --> pkg_deepseek_auth
@@ -764,6 +772,8 @@ flowchart LR
 | `ctx.credentials` | `seam` | [`credentials`](../packages/credentials/credentials) | [`credentials-local`](../packages/credentials/credentials-local) | [`api-settings-controller`](../packages/api/settings-controller), [`deepseek-auth`](../packages/account/deepseek-auth), [`llm-pi-ai`](../packages/llm/llm-pi-ai) | - | Configuration carries references to secrets; providers own the values. Consumers resolve per operation, so a rotated credential reaches the very next request; the settings controller exposes value-free views and write-only storage. |
 | `ctx.deepseekAccount` | `service` | [`deepseek-account`](../packages/account/deepseek-account) | - | [`deepseek-auth`](../packages/account/deepseek-auth), [`llm-deepseek-account`](../packages/llm/llm-deepseek-account) | - | The Host owns browser authorization and local credentials and releases per-request credentials to DeepSeek request authentication; the account model route registers its running-task report, and UI consumers receive state without tokens. |
 | `ctx.deepseekAuth` | `service` | [`deepseek-auth`](../packages/account/deepseek-auth) | - | [`llm-deepseek-account`](../packages/llm/llm-deepseek-account), [`llm-deepseek-api-key`](../packages/llm/llm-deepseek-api-key), [`web-deepseek-api`](../packages/web/web-deepseek-api), [`web-search-deepseek`](../packages/web/web-search-deepseek) | - | Every DeepSeek API consumer names the credential kinds its API accepts; the service orders the API key and the account sign-in by billing, binds each to its deployment, and releases request headers. |
+| `ctx.coperaAccount` | `service` | [`copera-account`](../packages/account/copera-account) | - | - | - | The Host owns the Copera browser sign-in and the stored grant; Clients receive state without tokens through the coperaAccount Remote namespace. |
+| `ctx.coperaTokens` | `seam` | [`llm-copera`](../packages/llm/llm-copera) | [`copera-account`](../packages/account/copera-account) | [`llm-copera`](../packages/llm/llm-copera) | - | The copera model route asks for an access token per request and reports a rejected token once; the provider refreshes the stored grant or falls back to DSH_COPERA_TOKEN. |
 | `ctx.authorization` | `seam` | [`authorization`](../packages/credentials/authorization) | - | [`llm-pi-ai`](../packages/llm/llm-pi-ai) | - | Flows are registered by the plugin that knows how to obtain one credential and keyed by the record they write; the seam owns the conversation and the one-attempt-per-key lifecycle, never the protocol. |
 | `ctx.productAnalytics` | `service` | [`client-product-analytics`](../packages/client/product-analytics) | - | - | - | Accepts selected Desktop events, enriches available login identity, and observes live compaction under the live Host collection policy. |
 | `ctx.otel` | `service` | [`otel`](../packages/telemetry/otel) | - | [`host-product-telemetry-otel`](../packages/host/product-telemetry-otel), [`session-telemetry-otel`](../packages/session/session-telemetry-otel) | - | Product analytics and Session feedback adapters create independent reporting channels through one injected service. |

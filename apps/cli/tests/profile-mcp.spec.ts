@@ -47,7 +47,8 @@ describe('shipped MCP resource composition', () => {
     try {
       const profile = loadProfile('dsh', name, installAnchor, home)
       const rows = composeEntries([...profile.layers.map(layer => layer.patches), profile.patches])
-      expect(rows.filter(row => row.name === '@deepseek-ai/dsh-mcp-manager')).toEqual(name === 'web'
+      // COPERA: the copera profile stacks dsh-web-app, so it mounts the server manager too.
+      expect(rows.filter(row => row.name === '@deepseek-ai/dsh-mcp-manager')).toEqual(name === 'web' || name === 'copera'
         ? [{ id: 'mcp-manager', name: '@deepseek-ai/dsh-mcp-manager', inject: ['credentials'] }]
         : [])
     } finally {

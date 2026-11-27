@@ -136,6 +136,13 @@ export interface PiAiAdapterOptions {
    * conversation report them again.
    */
   onThinkingOmitted?: (detail: { provider: string; model: string; count: number }) => void
+  // COPERA: optional fetch for inference requests, so a wrapping adapter can observe and replay provider HTTP.
+  /**
+   * Fetch implementation pi-ai uses for every inference request this adapter
+   * dispatches; omission keeps the SDK default. It sees each HTTP attempt,
+   * including non-2xx responses, before the SDK parses them.
+   */
+  fetch?: typeof globalThis.fetch
 }
 
 /** The two auth injectables a pi-ai collection is built with. */
@@ -477,6 +484,8 @@ export class PiAiAdapter extends LlmAdapter {
         ...options.sessionId === undefined ? {} : { sessionId: String(options.sessionId) },
         signal: watchdog.signal,
         headers: requestHeaders(profile.headers, options, model.baseUrl, this.config.prepareHeaders),
+        // COPERA: pass the optional fetch through to pi-ai.
+        ...this.config.fetch === undefined ? {} : { fetch: this.config.fetch },
       })
       const iterator = toStreamChunks(events, model.contextWindow, options.signal, model.id, digest)[Symbol.asyncIterator]()
       let exhausted = false
