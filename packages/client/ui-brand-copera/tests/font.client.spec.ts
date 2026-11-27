@@ -28,16 +28,16 @@ describe('bundled Inter font', () => {
 
   it('ships the SIL Open Font License beside the font', async () => {
     const license = await readFile(join(FONTS, 'OFL.txt'), 'utf8')
-    expect(license.split('\n')[0]).toBe('Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)')
+    expect(license.split('\n')[0]).toBe('Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)')
     expect(license).toContain('SIL Open Font License, Version 1.1')
-    for (const section of ['PREAMBLE', 'DEFINITIONS', 'PERMISSION & CONDITIONS', 'TERMINATION', 'DISCLAIMER']) {
+    for (const section of ['PREAMBLE', 'DEFINITIONS', 'PERMISSION AND CONDITIONS', 'TERMINATION', 'DISCLAIMER']) {
       expect(license).toContain(section)
     }
   })
 
   it('lists Inter under its licence in the third-party notices', async () => {
     const notices = await readFile(join(import.meta.dirname, '../../../../THIRD_PARTY_NOTICES.md'), 'utf8')
-    expect(notices).toContain('Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)')
+    expect(notices).toContain('Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)')
     expect(notices).toContain('packages/client/ui-brand-copera/src/client/fonts/OFL.txt')
   })
 })

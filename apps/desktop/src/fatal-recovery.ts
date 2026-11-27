@@ -29,12 +29,18 @@ const DETAIL_BUDGET = 1200
 /** Tail lines of the error kept in the dialog; the report file holds the rest. */
 const DETAIL_TAIL_LINES = 8
 
+/** COPERA: the `copera-product-lock` guard's refusal, shown whole instead of the error tail; reinstalling does not fix it. */
+const PRODUCT_LOCK_LINE = /^\s*(?:Error: )?(Copera Code product lock: .+)$/mu
+
 /** At most eight error-tail lines; status, advice and truncation notice share the detail character budget.
  * The message heading has its own field.
  */
 function dialogDetail(error: string, messages: DesktopMessages, reportState: ReportState): string {
   const advice = `\n\n${messages.startupReinstallAdvice}`
   const report = reportLine(messages, reportState)
+  // COPERA: the product-lock refusal sits above the "Plugins waiting for services" table, so the tail cut it off.
+  const productLock = PRODUCT_LOCK_LINE.exec(error)?.[1]
+  if (productLock) return `${productLock.slice(0, DETAIL_BUDGET - report.length - 1)}${report}`
   const tail = error.split(/\r\n|[\n\r\u2028\u2029]/u).slice(-DETAIL_TAIL_LINES).join('\n')
   const budget = DETAIL_BUDGET - advice.length - report.length - messages.diagnosticTruncated.length - 1
   const shortened = tail.slice(-budget).replace(/^[\uDC00-\uDFFF]/u, '')

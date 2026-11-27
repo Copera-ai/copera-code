@@ -68,9 +68,11 @@ Check before an upstream merge: `git diff --stat "$BASE" -- . ':!packages/bundle
 - `apps/desktop/src/welcome-api.ts` — `needsWelcome` returns `false` — the native DeepSeek welcome is never shown.
 - `apps/desktop/src/welcome-backend.ts` — unavailable account backend, `loggedIn: false` — no `account/*` calls or reconnect loop.
 - `apps/desktop/src/command-manager-entry.ts` — refuses install and remove; inspects `/usr/local/bin/copera-code` — v1 ships no terminal command.
+- `apps/desktop/src/fatal-recovery.ts` — the fatal dialog shows a `Copera Code product lock:` refusal whole, without the reinstall advice, instead of the last error lines (`// COPERA:`) — the lock message sat above the pending-plugin table and was cut off.
 - `apps/desktop/src/locale.ts` — product name in all locales; address-in-use copy in every locale names Copera Code; pt articles — branding.
 - `apps/desktop/.env.macos.example`, `apps/desktop/.env.windows.example` — rewritten for Copera (`# COPERA:` header) — templates for unsigned and signed builds.
 - `apps/desktop/tests/main-startup.spec.ts`, `welcome-startup.spec.ts`, `welcome-window.spec.ts`, `welcome-host.spec.ts` — Host environment mapping, login-shell `COPERA_CODE_*` mapping, invalid origin, `window.open`, `copera-code` scheme, updates-off menu and checks, no welcome (`// COPERA:`) — behavior changed above.
+- `apps/desktop/tests/fatal-recovery.spec.ts` — added a product-lock dialog case (`// COPERA:`) — behavior changed above.
 - `apps/desktop/tests/copera-client-build-profile.spec.ts` — added: a real `copera` build record through the unsigned and signed packing checks — the stages spec stubs subprocesses.
 - `apps/desktop/tests/smoke-runtime.spec.ts`, `macos-signature.spec.ts` — no Host-side bundle installation probe; the legal `extraResources` (`// COPERA:`) — behavior changed above.
 - `apps/desktop/tests/runtime-preparation.spec.ts`, `development-app.spec.ts`, `expected/fatal-address-in-use-zh-CN.txt` — no `runtime/cli`; `COPERA_CODE_HOME` development launcher; rebranded zh address-in-use snapshot (`// COPERA:`; snapshot regenerated with `-u`) — behavior changed above.

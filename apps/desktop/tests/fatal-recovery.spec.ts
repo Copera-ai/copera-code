@@ -349,3 +349,22 @@ it.each([false, true])('keeps the original attachment when revealing after a rec
   expect(operations.writeReport).toHaveBeenCalledExactlyOnceWith(original, 'host')
   expect(operations.revealReport).toHaveBeenCalledExactlyOnceWith(REPORT_PATH)
 })
+
+// COPERA: the product-lock refusal precedes the pending-plugin table, which the error tail alone would show.
+it('shows the Copera product-lock refusal instead of the error tail', async () => {
+  const { operations, choice, stopped, recovery } = fixture('pt-BR', async () => REPORT_PATH)
+  const lock = 'Copera Code product lock: row "llm-pi-ai" is enabled. Copera Code routes models only through Copera and keeps telemetry, other model providers, and plugin installation off; remove the change from cordis.patch.yml in the data home or its profile directory, or restore the profile bundle list, and start again.'
+  const pending = recovery.report(new Error([
+    'dsh: startup failed: 2 required plugins did not activate', '', 'Failed plugins (1):', '  copera-product-lock',
+    '    Package: @deepseek-ai/dsh-copera-app', `    Error: ${lock}`, '        at new apply (file:///app/lib/index.js:128:9)', '',
+    'Plugins waiting for services (5):', '  Plugin                  Missing services', '  webserver (required)    coperaProductLock',
+    '  web-runtime (required)  webServer', '  open-in-app             webServer', '  directory-picker        webServer',
+    '  remote-connection       webServer, webApp',
+  ].join('\n')), 'host')
+  await shown(operations)
+  const detail = operations.show.mock.calls[0]![0].detail!
+  expect(detail).toBe(`${lock}\n${operations.messages().reportWrittenTo.replace('{path}', REPORT_PATH)}`)
+  choice.resolve({ response: 0, checkboxChecked: false })
+  stopped.resolve(undefined)
+  await pending
+})

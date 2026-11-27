@@ -13,7 +13,7 @@ The identity is fixed in `apps/desktop/scripts/product-identity.mjs`; packaging 
 | URL scheme | `copera-code` (registered by electron-builder in `Info.plist` and by the app at runtime; the Windows uninstaller removes `HKCU\Software\Classes\copera-code`) |
 | Artifact names | `copera-code-<version>-mac-<arch>.dmg` / `.zip`, `copera-code-<version>-win-x64.exe`; unsigned builds add `-unsigned`, unnotarized ones `-unnotarized` |
 | Packaged manifest name | `copera-code` (electron-builder updater cache `copera-code-updater`) |
-| Electron user data | `~/Library/Application Support/Copera Code` (macOS), `%APPDATA%\Copera Code` (Windows) |
+| Electron user data | `~/Library/Application Support/copera-code` (macOS), `%APPDATA%\copera-code` (Windows); Electron derives it from the packaged manifest name. Crash reports go to `~/Library/Logs/Copera Code` (macOS) |
 | Copera Code data home | `~/.copera-code`, or `COPERA_CODE_HOME`; an inherited `DSH_HOME` is ignored. `COPERA_CODE_HOME` takes effect only when the app is launched from a terminal: a Dock, Finder, or Start-menu launch resolves the data home from the session environment before the login-shell read, and the home cannot move once paths are resolved. `COPERA_CODE_TOKEN` and `COPERA_CODE_API_ORIGIN` from the login shell are applied to the Host for every launch. |
 | Windows publisher and macOS company in package metadata | `Copera` |
 
@@ -175,5 +175,5 @@ Optional tuning variables are `DSH_DESKTOP_WINDOWS_SIGNATURE_CACHE_DIR`, `DSH_DE
 
 ## Open decisions
 
-- Signing machines and owners for macOS and Windows are not assigned. The upstream packaging workflows are disabled in the fork (see [upstream-sync.md](upstream-sync.md#upstream-workflows-in-the-fork)) and Copera Code has no packaging workflow of its own; builds run by hand on the machines above.
+- Signing machines for macOS and Windows are not assigned; the holder of the Copera signing keys runs the first signed release from [release-signing-handoff.md](release-signing-handoff.md). The upstream packaging workflows are disabled in the fork (see [upstream-sync.md](upstream-sync.md#upstream-workflows-in-the-fork)) and Copera Code has no packaging workflow of its own; builds run by hand on the machines above.
 - The `Copera` publisher name in package metadata stands in until the legal entity name for installers is confirmed.

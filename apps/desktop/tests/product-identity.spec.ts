@@ -50,7 +50,7 @@ describe('Copera Code Desktop identity', () => {
       expect(statSync(resource!.from).isFile(), to).toBe(true)
     }
     const inter = readFileSync(resources.find(entry => entry.to === 'OFL-Inter.txt')!.from, 'utf8')
-    expect(inter.startsWith('Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)\n')).toBe(true)
+    expect(inter.startsWith('Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)\n')).toBe(true)
   })
 
   it.each(Object.entries({ en, zh, ja, es, fr, de, ru, pt }))('names Copera Code in the %s address-in-use dialog', (_locale, messages) => {

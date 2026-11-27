@@ -183,7 +183,7 @@ async function main(): Promise<void> {
     const leaking = sourceMapsWithLocalPaths(maps, [ROOT, homedir()])
     check(leaking.length === 0, `no source map (${String(maps.length)} checked) names a local absolute path${leaking.length === 0 ? '' : `: ${leaking.slice(0, 20).join(', ')}`}`)
     const interLicense = join(extracted, 'package', 'OFL-Inter.txt')
-    check(existsSync(interLicense) && readFileSync(interLicense, 'utf8').startsWith('Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)\n')
+    check(existsSync(interLicense) && readFileSync(interLicense, 'utf8').startsWith('Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)\n')
       && readFileSync(interLicense, 'utf8').includes('SIL OPEN FONT LICENSE Version 1.1'), 'the package ships the Inter licence (OFL-1.1) beside THIRD_PARTY_NOTICES.md')
 
     const consumer = join(work, 'consumer')

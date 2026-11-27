@@ -187,7 +187,7 @@ The optional experimental Inspector distributes a locally compiled copy of [chro
 
 ## Fonts
 
-`@deepseek-ai/dsh-client-ui-brand-copera` embeds the variable Latin subset of [Inter](https://github.com/rsms/inter), Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter), under the SIL Open Font License 1.1. The complete license text ships beside the font in [`packages/client/ui-brand-copera/src/client/fonts/OFL.txt`](packages/client/ui-brand-copera/src/client/fonts/OFL.txt) and in every Copera Code package next to this file as `OFL-Inter.txt`.
+`@deepseek-ai/dsh-client-ui-brand-copera` embeds the variable Latin subset of [Inter](https://github.com/rsms/inter), Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter), under the SIL Open Font License 1.1. The complete license text ships beside the font in [`packages/client/ui-brand-copera/src/client/fonts/OFL.txt`](packages/client/ui-brand-copera/src/client/fonts/OFL.txt) and in every Copera Code package next to this file as `OFL-Inter.txt`.
 
 
 ## Official Claude Code platform payloads
