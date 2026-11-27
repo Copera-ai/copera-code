@@ -4,7 +4,7 @@ This page is a task brief for the person who holds the Copera signing keys (the 
 
 ## Where things stand
 
-- Branch: `copera/v1` on `Copera-ai/copera-code`. Build from its tip.
+- Branch: `master` on `Copera-ai/copera-code`. Build from its tip.
 - **macOS:** validated end to end on an Apple Silicon Mac with an unsigned build (macOS 27, Node 24.22.3, pnpm 11.28.5): the unsigned package builds, `pack-npm` and `verify-pack` pass, browser OAuth sign-in works, a real access-token refresh after one hour works without a new sign-in, the revoked token is refused by the API, `~/.dsh` is untouched, and the app only talks to `127.0.0.1` and `api.copera.ai` / `app.copera.ai`. Gates passed: `typecheck`, `lint`, Copera package specs, `apps/desktop/tests`, `build:desktop`, `check:i18n`, `doc-sync`. Signing and notarization were **not** run: no Developer ID Application certificate with a private key was available.
 - **Windows:** **never packaged or run.** The only test machine was Windows on ARM, and `package-target.ts` refuses non-x64 hosts. Your Windows run is the first one, so it also has to do the smoke checks below.
 
@@ -14,11 +14,11 @@ This page is a task brief for the person who holds the Copera signing keys (the 
 2. Signed Windows x64 installer (`win-x64`), plus the Windows smoke checks.
 3. Hand back the artifacts and a short report (see [Hand back](#hand-back)).
 
-Do not change application code to get a build through. If a check fails, stop and report it with the log path; fixes go through a pull request into `copera/v1`.
+Do not change application code to get a build through. If a check fails, stop and report it with the log path; fixes go through a pull request into `master`.
 
 ## Setup on both machines
 
-Follow [Before any build](signing.md#before-any-build): clone, `git checkout copera/v1`, `corepack enable`, `pnpm install --frozen-lockfile`. Record the commit you build (`git rev-parse HEAD`).
+Follow [Before any build](signing.md#before-any-build): clone, `git checkout master`, `corepack enable`, `pnpm install --frozen-lockfile`. Record the commit you build (`git rev-parse HEAD`).
 
 Settings go in `apps/desktop/.env.macos` or `apps/desktop/.env.windows`, copied from the `.example` next to them. Git ignores both files. Settings are never read from the shell environment.
 

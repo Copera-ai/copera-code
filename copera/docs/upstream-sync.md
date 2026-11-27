@@ -1,6 +1,6 @@
 # Upstream sync (Copera Code)
 
-How Copera Code takes changes from upstream DeepSeek Harness. Upstream is `deepseek-ai/deepseek-harness` branch `master`; the product branch is `copera/v1` on `Copera-ai/copera-code`. Run the steps in order. Every sync is a merge, never a rebase: a rebase rewrites Copera commits, and a squash or rebase landing drops the upstream parent, so the next `git merge-base` would no longer find the previous sync point.
+How Copera Code takes changes from upstream DeepSeek Harness. Upstream is `deepseek-ai/deepseek-harness` branch `master`; the product branch is `master` on `Copera-ai/copera-code`. Run the steps in order. Every sync is a merge, never a rebase: a rebase rewrites Copera commits, and a squash or rebase landing drops the upstream parent, so the next `git merge-base` would no longer find the previous sync point.
 
 ## 1. Prepare the checkout
 
@@ -10,8 +10,8 @@ The remotes must be `origin` = `https://github.com/Copera-ai/copera-code.git` an
 git remote add upstream https://github.com/deepseek-ai/deepseek-harness.git   # once per clone
 git fetch upstream --tags
 git fetch origin
-git switch copera/v1
-git pull --ff-only origin copera/v1
+git switch master
+git pull --ff-only origin master
 git status --short   # must be empty
 corepack enable      # pnpm comes from packageManager in package.json
 ```
@@ -19,7 +19,7 @@ corepack enable      # pnpm comes from packageManager in package.json
 Record the previous sync point and look at what is coming:
 
 ```sh
-PREV=$(git merge-base copera/v1 upstream/master)
+PREV=$(git merge-base master upstream/master)
 git log --oneline "$PREV..upstream/master" | wc -l
 ```
 
@@ -27,7 +27,7 @@ git log --oneline "$PREV..upstream/master" | wc -l
 
 ```sh
 SYNC_DATE=$(date +%Y-%m-%d)
-git switch -c "sync/upstream-$SYNC_DATE" copera/v1
+git switch -c "sync/upstream-$SYNC_DATE" master
 git merge --no-ff --no-commit upstream/master
 ```
 
@@ -37,7 +37,7 @@ The expected conflict surface is the files listed in [upstream-edits.md](upstrea
 
 - **Hand edits:** take the upstream version, then reapply the Copera change described in its line and keep the `// COPERA:` or `# COPERA:` marker where the format allows one.
 - **Generator outputs** (`tsconfig.base.json` generated region, `pnpm-lock.yaml`, generated docs and catalogs): take the upstream side with `git checkout --theirs -- <file>`, then regenerate in step 6. A `tsconfig.base.json` conflict outside the generated region is a hand edit.
-- **A conflict in a file that upstream-edits.md does not list** means an unrecorded Copera edit. Stop, find the commit with `git log copera/v1 -- <file>`, and either add the missing line to upstream-edits.md or remove the edit.
+- **A conflict in a file that upstream-edits.md does not list** means an unrecorded Copera edit. Stop, find the commit with `git log master -- <file>`, and either add the missing line to upstream-edits.md or remove the edit.
 
 After resolving, check that every upstream file Copera changes is recorded. This lists upstream files that differ from upstream after the merge, excluding Copera-owned paths:
 
@@ -158,7 +158,7 @@ pnpm copera-code
 ## 9. Land the sync
 
 1. Commit the merge on `sync/upstream-<date>` and push it to `origin`.
-2. Disable any workflow found in 4.3 (commands below), then open a pull request into `copera/v1`.
+2. Disable any workflow found in 4.3 (commands below), then open a pull request into `master`.
 3. Wait for Copera CI to pass, then merge with a merge commit. Do not squash or rebase the pull request.
 
 ## Upstream workflows in the fork

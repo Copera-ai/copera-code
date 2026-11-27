@@ -1,6 +1,6 @@
 # New package checklist (Copera Code)
 
-Checks the upstream gates apply to a new workspace package under `packages/<group>/<pkg>/`. Every rule cites the script that enforces it. Recorded on `copera/v1` over the upstream `0.2.3-alpha.2` release.
+Checks the upstream gates apply to a new workspace package under `packages/<group>/<pkg>/`. Every rule cites the script that enforces it. Recorded on `master` over the upstream `0.2.3-alpha.2` release.
 
 ## Which command runs which check
 

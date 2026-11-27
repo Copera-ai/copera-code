@@ -42,12 +42,12 @@ The native DeepSeek welcome window never opens; the app starts in the main windo
 
 ## Before any build
 
-Both platforms build from a full clone of `Copera-ai/copera-code` on branch `copera/v1`:
+Both platforms build from a full clone of `Copera-ai/copera-code` on branch `master`:
 
 ```sh
 git clone https://github.com/Copera-ai/copera-code.git
 cd copera-code
-git checkout copera/v1
+git checkout master
 corepack enable            # provides pnpm 11.28.5 from package.json "packageManager"
 node --version             # must satisfy ^24.22.3 || >=26.13.1
 pnpm install --frozen-lockfile
