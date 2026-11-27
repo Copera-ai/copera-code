@@ -66,12 +66,18 @@ export const LOCALE_OVERRIDES: Readonly<Record<string, NamespaceOverrides>> = {
       'message.failure.accountSignedOut': 'Stopped because you signed out of Copera.',
       'message.failure.interrupted': 'The Copera Code process exited before this turn finished (for example, it was killed, crashed, or timed out while shutting down), so the turn was closed when Copera Code restarted. Unfinished tool calls have unknown outcomes.',
       'message.failure.accountSignInRequired': 'Sign in to Copera and ensure the request destination supports account authentication.',
+      'message.failure.auth': 'The Copera access token was rejected. Sign in to Copera Code again, or check COPERA_CODE_TOKEN.',
     },
     pt: {
       'message.failure.accountSignedOut': 'Interrompido porque você saiu da sua conta Copera.',
       'message.failure.interrupted': 'O processo do Copera Code foi encerrado antes do fim deste turno (por exemplo, foi finalizado à força, travou ou excedeu o tempo limite ao desligar), então o turno foi encerrado quando o Copera Code reiniciou. Chamadas de ferramentas não concluídas têm resultado desconhecido.',
       'message.failure.accountSignInRequired': 'Entre na sua conta Copera e verifique se o destino da solicitação aceita autenticação de conta.',
+      'message.failure.auth': 'O token de acesso da Copera foi recusado. Entre de novo no Copera Code ou verifique COPERA_CODE_TOKEN.',
     },
+  },
+  trajectory: {
+    en: { 'details.failure.auth': 'The Copera access token was rejected. Sign in to Copera Code again, or check COPERA_CODE_TOKEN.' },
+    pt: { 'details.failure.auth': 'O token de acesso da Copera foi recusado. Entre de novo no Copera Code ou verifique COPERA_CODE_TOKEN.' },
   },
   actionCards: {
     en: { 'settings.description': 'Shows recommendation cards below the answer for what you want from Copera Code' },

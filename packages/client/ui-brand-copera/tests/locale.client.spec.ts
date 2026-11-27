@@ -33,6 +33,7 @@ const MODULE_NAMESPACES: Readonly<Record<string, string>> = {
   'packages/client/remote-connection/src/client/pairing-locales.ts': 'remoteConnection',
   'packages/client/ui-conversation/src/client/locales.ts': 'conversation',
   'packages/client/ui-chat/src/client/locale.ts': 'chat',
+  'packages/client/ui-trajectory/src/client/locales.ts': 'trajectory',
   'packages/client/ui-action-cards/src/client/locales.ts': 'actionCards',
   'packages/client/ui-creation-recommendations/src/client/locales.ts': 'creationRecommendations',
   'packages/client/ui-plugin-recommendations/src/client/locales.ts': 'pluginRecommendations',
@@ -168,6 +169,16 @@ describe('Copera Code product-name copy', () => {
           expect(UPSTREAM_NAME.test(value), `${ns}/${language}/${key}`).toBe(false)
           expect(upstreamKeys.get(`${ns}/${language}`)?.has(key), `${ns}/${language}/${key}`).toBe(true)
         }
+      }
+    }
+  })
+
+  it('describes an AUTH failure as a rejected Copera token, not an API key', () => {
+    for (const [ns, key] of [['chat', 'message.failure.auth'], ['trajectory', 'details.failure.auth']] as const) {
+      for (const language of OVERRIDE_LANGUAGES) {
+        const value = LOCALE_OVERRIDES[ns]?.[language]?.[key]
+        expect(value, `${ns}/${language}/${key}`).toMatch(/Copera/)
+        expect(value, `${ns}/${language}/${key}`).not.toMatch(/API/)
       }
     }
   })
