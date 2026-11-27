@@ -1,0 +1,6 @@
+[
+  "preset-standard standard",
+  "preset-ptc ptc",
+  "preset-minimal minimal",
+  "preset-cordis cordis (disabled)"
+]

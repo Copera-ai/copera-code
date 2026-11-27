@@ -171,6 +171,8 @@ flowchart LR
   pkg_web_search_deepseek["web-search-deepseek"]
   pkg_copera_account["copera-account"]
   svc_coperaAccount["ctx.coperaAccount<br/>Copera account"]
+  pkg_copera_app["copera-app"]
+  svc_coperaProductLock["ctx.coperaProductLock<br/>Copera Code product lock"]
   pkg_llm_copera["llm-copera"]
   svc_coperaTokens["ctx.coperaTokens<br/>Copera access tokens"]
   pkg_authorization["authorization"]
@@ -392,6 +394,7 @@ flowchart LR
   pkg_config_editor --> svc_configEditor
   pkg_copera_account --> svc_coperaAccount
   pkg_copera_account --> svc_coperaTokens
+  pkg_copera_app --> svc_coperaProductLock
   pkg_cordis_host_runner --> svc_cordisInspect
   pkg_cordis_host_runner --> svc_dynamicCordisRunner
   pkg_credentials --> svc_credentials
@@ -775,6 +778,7 @@ flowchart LR
 | `ctx.deepseekAccount` | `service` | [`deepseek-account`](../packages/account/deepseek-account) | - | [`deepseek-auth`](../packages/account/deepseek-auth), [`llm-deepseek-account`](../packages/llm/llm-deepseek-account) | - | Host 负责浏览器授权和本地凭证，并向 DeepSeek 请求鉴权释放按请求的凭据；账号模型路由注册其运行中任务报告，UI 使用方只接收不含 token 的状态。 |
 | `ctx.deepseekAuth` | `service` | [`deepseek-auth`](../packages/account/deepseek-auth) | - | [`llm-deepseek-account`](../packages/llm/llm-deepseek-account), [`llm-deepseek-api-key`](../packages/llm/llm-deepseek-api-key), [`web-deepseek-api`](../packages/web/web-deepseek-api), [`web-search-deepseek`](../packages/web/web-search-deepseek) | - | 每个 DeepSeek API 消费方给出其 API 接受的凭据种类；服务按计费方式排定 API 密钥与账号登录的顺序，把每一种绑定到其部署，并释放请求头。 |
 | `ctx.coperaAccount` | `service` | [`copera-account`](../packages/account/copera-account) | - | - | - | Host 负责 Copera 浏览器登录与已存授权；客户端通过 coperaAccount Remote 命名空间获得不含 token 的状态。 |
+| `ctx.coperaProductLock` | `service` | [`copera-app`](../packages/bundle/copera-app) | - | - | - | 仅当组合后的 copera profile 保持被锁定条目关闭、且除 copera 外未注册任何模型路由时存在；copera-app 的 patch 让必需的 webserver 条目注入它。 |
 | `ctx.coperaTokens` | `seam` | [`llm-copera`](../packages/llm/llm-copera) | [`copera-account`](../packages/account/copera-account) | [`llm-copera`](../packages/llm/llm-copera) | - | copera 模型路由为每个请求索取访问 token，并对被拒绝的 token 报告一次；提供方刷新已存授权，或回退到 DSH_COPERA_TOKEN。 |
 | `ctx.authorization` | `seam` | [`authorization`](../packages/credentials/authorization) | - | [`llm-pi-ai`](../packages/llm/llm-pi-ai) | - | flow 由知道如何取得某份凭据的插件注册，并以其写入的记录为键；seam 拥有这段对话与"每个键同时只跑一次尝试"的生命周期，而非协议本身。 |
 | `ctx.productAnalytics` | `service` | [`client-product-analytics`](../packages/client/product-analytics) | - | - | - | 根据 Host 动态采集策略接收指定桌面事件、补充可用登录身份并监听实时压缩。 |

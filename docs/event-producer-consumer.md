@@ -58,7 +58,7 @@ Application listeners are outside this package matrix. Desktop Host subscribes t
 | `hmr/change` | `emit` | [`packages/boot/hmr/src/index.ts:35`](../packages/boot/hmr/src/index.ts) | [`hmr`](../packages/boot/hmr) (`emit`) | - |
 | `hmr/reload` | `emit` | [`packages/boot/hmr/src/index.ts:40`](../packages/boot/hmr/src/index.ts) | [`hmr`](../packages/boot/hmr) (`emit`) | - |
 | `llm-pi-ai/request-headers` | `waterfall` | [`packages/llm/llm-pi-ai/src/index.ts:115`](../packages/llm/llm-pi-ai/src/index.ts) | [`llm-pi-ai`](../packages/llm/llm-pi-ai) (`waterfall`) | - |
-| `llm/adapters-updated` | `emit` | [`packages/llm/llm/src/types.ts:24`](../packages/llm/llm/src/types.ts) | [`llm`](../packages/llm/llm) (`events.dispatch`) | [`acp`](../packages/acp/acp), `remotes` |
+| `llm/adapters-updated` | `emit` | [`packages/llm/llm/src/types.ts:24`](../packages/llm/llm/src/types.ts) | [`llm`](../packages/llm/llm) (`events.dispatch`) | [`acp`](../packages/acp/acp), [`copera-app`](../packages/bundle/copera-app), `remotes` |
 | `llm/models-updated` | `emit` | [`packages/llm/llm/src/types.ts:30`](../packages/llm/llm/src/types.ts) | [`llm-deepseek`](../packages/llm/llm-deepseek) (`emit`) | `remotes` |
 | `llm/stream` | `waterfall` | [`packages/llm/llm/src/index.ts:78`](../packages/llm/llm/src/index.ts) | [`llm`](../packages/llm/llm) (`waterfall`) | [`llm-replay`](../packages/test-support/llm-replay), [`session-checkpoint-policy`](../packages/session/session-checkpoint-policy), [`session-title`](../packages/session/session-title), [`timeline`](../packages/experimental/timeline) |
 | `mcp-manager/status` | `parallel` | [`packages/mcp/mcp-manager/src/types.ts:49`](../packages/mcp/mcp-manager/src/types.ts) | [`mcp-manager`](../packages/mcp/mcp-manager) (`parallel`) | [`mcp-account`](../packages/mcp/mcp-account) |
@@ -123,7 +123,7 @@ Application listeners are outside this package matrix. Desktop Host subscribes t
 | `internal/dispatch` | - | [`terminal-bash`](../packages/terminal/terminal-bash) |
 | `internal/plugin` | - | `computer-use-cua-driver-native`, `inspector`, `loader`, [`lsp-stdio`](../packages/lsp/lsp-stdio), [`mcp-client`](../packages/mcp/mcp-client), [`mcp-manager`](../packages/mcp/mcp-manager), `modules` |
 | `internal/service` | - | `client-ui-forge`, `gateway` |
-| `internal/status` | - | [`agent`](../packages/core/agent), `claude-code-mods`, `inspector`, `modules`, `server`, `translator`, [`web`](../packages/web/web) |
+| `internal/status` | - | [`agent`](../packages/core/agent), `claude-code-mods`, [`copera-app`](../packages/bundle/copera-app), `inspector`, `modules`, `server`, `translator`, [`web`](../packages/web/web) |
 | `loader/volatile-update` | - | [`action-cards`](../packages/interaction/action-cards), [`llm-deepseek`](../packages/llm/llm-deepseek), [`llm-deepseek-api-key`](../packages/llm/llm-deepseek-api-key), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`mcp-manager`](../packages/mcp/mcp-manager), `modules`, [`plugin-market`](../packages/boot/plugin-market), `product-analytics`, `speech-to-text`, [`timeline`](../packages/experimental/timeline) |
 | `locale/change` | `locale` (`emit`) | `locale` |
 | `slots/changed` | `ui-renderer` (`emit`) | - |

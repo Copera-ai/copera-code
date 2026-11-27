@@ -169,6 +169,8 @@ flowchart LR
   pkg_web_search_deepseek["web-search-deepseek"]
   pkg_copera_account["copera-account"]
   svc_coperaAccount["ctx.coperaAccount<br/>Copera account"]
+  pkg_copera_app["copera-app"]
+  svc_coperaProductLock["ctx.coperaProductLock<br/>Copera Code product lock"]
   pkg_llm_copera["llm-copera"]
   svc_coperaTokens["ctx.coperaTokens<br/>Copera access tokens"]
   pkg_authorization["authorization"]
@@ -390,6 +392,7 @@ flowchart LR
   pkg_config_editor --> svc_configEditor
   pkg_copera_account --> svc_coperaAccount
   pkg_copera_account --> svc_coperaTokens
+  pkg_copera_app --> svc_coperaProductLock
   pkg_cordis_host_runner --> svc_cordisInspect
   pkg_cordis_host_runner --> svc_dynamicCordisRunner
   pkg_credentials --> svc_credentials
@@ -773,6 +776,7 @@ flowchart LR
 | `ctx.deepseekAccount` | `service` | [`deepseek-account`](../packages/account/deepseek-account) | - | [`deepseek-auth`](../packages/account/deepseek-auth), [`llm-deepseek-account`](../packages/llm/llm-deepseek-account) | - | The Host owns browser authorization and local credentials and releases per-request credentials to DeepSeek request authentication; the account model route registers its running-task report, and UI consumers receive state without tokens. |
 | `ctx.deepseekAuth` | `service` | [`deepseek-auth`](../packages/account/deepseek-auth) | - | [`llm-deepseek-account`](../packages/llm/llm-deepseek-account), [`llm-deepseek-api-key`](../packages/llm/llm-deepseek-api-key), [`web-deepseek-api`](../packages/web/web-deepseek-api), [`web-search-deepseek`](../packages/web/web-search-deepseek) | - | Every DeepSeek API consumer names the credential kinds its API accepts; the service orders the API key and the account sign-in by billing, binds each to its deployment, and releases request headers. |
 | `ctx.coperaAccount` | `service` | [`copera-account`](../packages/account/copera-account) | - | - | - | The Host owns the Copera browser sign-in and the stored grant; Clients receive state without tokens through the coperaAccount Remote namespace. |
+| `ctx.coperaProductLock` | `service` | [`copera-app`](../packages/bundle/copera-app) | - | - | - | Present only while the composed copera profile keeps its locked rows off and registers no model route but copera; the copera-app patch makes the required webserver row inject it. |
 | `ctx.coperaTokens` | `seam` | [`llm-copera`](../packages/llm/llm-copera) | [`copera-account`](../packages/account/copera-account) | [`llm-copera`](../packages/llm/llm-copera) | - | The copera model route asks for an access token per request and reports a rejected token once; the provider refreshes the stored grant or falls back to DSH_COPERA_TOKEN. |
 | `ctx.authorization` | `seam` | [`authorization`](../packages/credentials/authorization) | - | [`llm-pi-ai`](../packages/llm/llm-pi-ai) | - | Flows are registered by the plugin that knows how to obtain one credential and keyed by the record they write; the seam owns the conversation and the one-attempt-per-key lifecycle, never the protocol. |
 | `ctx.productAnalytics` | `service` | [`client-product-analytics`](../packages/client/product-analytics) | - | - | - | Accepts selected Desktop events, enriches available login identity, and observes live compaction under the live Host collection policy. |

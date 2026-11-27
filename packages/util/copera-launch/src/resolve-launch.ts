@@ -7,7 +7,7 @@
  * @module @deepseek-ai/dsh-copera-launch/resolve-launch
  */
 
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 
 /** The command name printed in help and errors. */
 export const COPERA_CODE_BIN = 'copera-code'
@@ -35,58 +35,85 @@ export interface RejectedLaunch {
 /** Upstream modes that name another product profile or a management command. */
 const UNSUPPORTED_MODES = new Set(['headless', 'acp', 'sdk', 'sdk-minimal', 'desktop', 'plugin'])
 
-/** Launcher options that select or rewrite another profile tree. */
+/**
+ * Options the command refuses by name: launcher options that select or rewrite another profile tree, and Web
+ * options that serve beyond this computer (an advertised public URL, extra trusted authorities, TLS).
+ */
 const UNSUPPORTED_OPTIONS = new Set([
   '--profile', '--patch', '--from-default-profile', '--dump-config', '--dump-default-config', '--dump-config-schema',
+  '--public-url', '--trusted-host', '--tls-cert', '--tls-key',
 ])
 
-/** Web application options that take one value. */
-const VALUE_OPTIONS = new Set(['--host', '--port', '--public-url', '--tls-cert', '--tls-key'])
+/** Options that print help or the version and exit. */
+const INFO_OPTIONS = new Set(['-h', '--help', '-V', '--version'])
 
-/** Web application options that take every following value up to the next option. */
-const VARIADIC_OPTIONS = new Set(['--trusted-host'])
+/** Bind addresses `--host` accepts: the loopback interface only. */
+const LOOPBACK_BIND_HOSTS = new Set(['127.0.0.1', '::1', 'localhost'])
+
+/** Hosts a plain `http:` API origin may name: a local Copera API stand-in. */
+const LOOPBACK_ORIGIN_HOSTS = new Set(['127.0.0.1', '[::1]'])
 
 /**
  * Map the real process environment to the product environment the harness reads.
- * `DSH_HOME` is `COPERA_CODE_HOME` or `<homedir>/.copera-code`, ignoring an inherited `DSH_HOME`;
- * `DSH_TELEMETRY_DISABLED` is always `1`; `DSH_COPERA_TOKEN` and `DSH_COPERA_API_ORIGIN` come only from
- * `COPERA_CODE_TOKEN` and `COPERA_CODE_API_ORIGIN` and are `undefined` (to delete) otherwise.
+ * `DSH_HOME` is `COPERA_CODE_HOME` (trimmed, a leading `~` expanded, made absolute) or `<homedir>/.copera-code`,
+ * ignoring an inherited `DSH_HOME`; `DSH_TELEMETRY_DISABLED` is always `1`; `DSH_COPERA_TOKEN` and
+ * `DSH_COPERA_API_ORIGIN` come only from `COPERA_CODE_TOKEN` and `COPERA_CODE_API_ORIGIN` and are `undefined`
+ * (to delete) otherwise.
  * @param env - The real process environment, before any `.env` file is loaded.
  * @param homedir - The operating-system home directory.
  * @returns Exactly the four product variables; `undefined` values must be deleted.
- * @throws Error if `COPERA_CODE_API_ORIGIN` is set and is not an `https:` URL.
+ * @throws Error if `COPERA_CODE_API_ORIGIN` is set and is not a bare `https:` origin (or `http:` on
+ *   `127.0.0.1`/`[::1]`).
  */
 export function resolveProductEnv(env: NodeJS.ProcessEnv, homedir: string): Record<string, string | undefined> {
-  const home = env.COPERA_CODE_HOME
   const token = env.COPERA_CODE_TOKEN
   return {
-    DSH_HOME: home !== undefined && home.trim() !== '' ? home : join(homedir, COPERA_CODE_HOME_DIR_NAME),
+    DSH_HOME: productHome(env.COPERA_CODE_HOME, homedir),
     DSH_TELEMETRY_DISABLED: '1',
     DSH_COPERA_TOKEN: token !== undefined && token !== '' ? token : undefined,
-    DSH_COPERA_API_ORIGIN: httpsOrigin(env.COPERA_CODE_API_ORIGIN),
+    DSH_COPERA_API_ORIGIN: apiOrigin(env.COPERA_CODE_API_ORIGIN),
   }
 }
 
 /**
- * Validate the API origin override; the value itself never appears in the error.
- * @param value - The raw `COPERA_CODE_API_ORIGIN` value.
- * @returns The value when it is an `https:` URL, or `undefined` when unset or empty.
- * @throws Error if the value is set and is not an `https:` URL.
+ * Resolve the data home.
+ * @param value - The raw `COPERA_CODE_HOME` value.
+ * @param homedir - The operating-system home directory.
+ * @returns An absolute directory: the trimmed value with `~` or a leading `~/` expanded, resolved against the working
+ *   directory, or `<homedir>/.copera-code` when the value is unset or blank.
  */
-function httpsOrigin(value: string | undefined): string | undefined {
+function productHome(value: string | undefined, homedir: string): string {
+  const trimmed = value?.trim() ?? ''
+  if (trimmed === '') return join(homedir, COPERA_CODE_HOME_DIR_NAME)
+  if (trimmed === '~') return homedir
+  if (trimmed.startsWith('~/') || trimmed.startsWith('~\\')) return join(homedir, trimmed.slice(2))
+  return resolve(trimmed)
+}
+
+/**
+ * Validate the API origin override with the rule the Copera plugins apply; the value never appears in the error.
+ * @param value - The raw `COPERA_CODE_API_ORIGIN` value.
+ * @returns The normalized origin, or `undefined` when unset or empty.
+ * @throws Error unless the value is an `https:` origin, or an `http:` origin on `127.0.0.1` or `[::1]`, without
+ *   credentials, path, query, or fragment.
+ */
+function apiOrigin(value: string | undefined): string | undefined {
   if (value === undefined || value === '') return undefined
-  if (URL.parse(value)?.protocol !== 'https:') {
-    throw new Error(`${COPERA_CODE_BIN}: COPERA_CODE_API_ORIGIN must be an https:// URL`)
+  const url = URL.parse(value)
+  const secure = url?.protocol === 'https:' || (url?.protocol === 'http:' && LOOPBACK_ORIGIN_HOSTS.has(url.hostname))
+  if (url === null || !secure || url.username !== '' || url.password !== '' || url.pathname !== '/'
+    || url.search !== '' || url.hash !== '') {
+    throw new Error(`${COPERA_CODE_BIN}: COPERA_CODE_API_ORIGIN must be an https origin without credentials, path, query, or fragment (http only for 127.0.0.1 or [::1])`)
   }
-  return value
+  return url.origin
 }
 
 /**
  * Resolve `copera-code` arguments and environment into one dsh CLI launch of the `copera` profile.
- * A leading `web` is an alias for no mode and is dropped. Other upstream modes, any other positional, and the
- * launcher options that select or rewrite a profile (`--profile`, `--patch`, `--from-default-profile`, the
- * config dumps) are rejected. Web options such as `--help`, `--version`, `--port`, `--host`, and `--no-open` pass
- * through in order.
+ * A leading `web` is an alias for no mode and is dropped. The accepted options are an allowlist for local use:
+ * `-h`/`--help`, `-V`/`--version`, `--port <0-65535>`, `--host <127.0.0.1|::1|localhost>`, and `--no-open`, each
+ * also in `--name=value` form. When an information option is present, only the first one is passed on, so
+ * `--no-open --version` prints the version. Other upstream modes, positionals, and options are refused.
  * @param argv - Arguments after the Node binary and script.
  * @param env - The real process environment, before any `.env` file is loaded.
  * @param homedir - The operating-system home directory.
@@ -96,30 +123,42 @@ export function resolveLaunch(argv: string[], env: NodeJS.ProcessEnv, homedir: s
   const args = argv[0] === 'web' ? argv.slice(1) : [...argv]
   const error = argumentError(args)
   if (error !== undefined) return { error }
+  const info = args.find(arg => INFO_OPTIONS.has(arg))
   try {
-    return { argv: ['--profile', COPERA_PROFILE, ...args], env: resolveProductEnv(env, homedir) }
+    return { argv: ['--profile', COPERA_PROFILE, ...info === undefined ? args : [info]], env: resolveProductEnv(env, homedir) }
   } catch (failure) {
     return { error: (failure as Error).message }
   }
 }
 
 /**
- * Find the first argument the command does not support.
+ * Find the first argument the command does not accept. Option values are validated but never echoed.
  * @param args - Arguments after the optional `web` alias.
- * @returns The error message, or `undefined` when every argument is supported.
+ * @returns The error message, or `undefined` when every argument is accepted.
  */
 function argumentError(args: readonly string[]): string | undefined {
   for (let index = 0; index < args.length; index++) {
     const arg = args[index] as string
     if (!arg.startsWith('-') || arg === '--') return positionalError(arg === '--' ? args[index + 1] ?? '--' : arg)
-    const name = arg.split('=', 1)[0] as string
+    const separator = arg.indexOf('=')
+    const name = separator < 0 ? arg : arg.slice(0, separator)
     if (UNSUPPORTED_OPTIONS.has(name)) {
-      return `${COPERA_CODE_BIN}: ${name} is not supported; ${COPERA_CODE_BIN} always runs the Copera Code profile`
+      return `${COPERA_CODE_BIN}: ${name} is not supported; ${COPERA_CODE_BIN} always runs the Copera Code profile on this computer`
     }
-    if (arg.includes('=')) continue
-    if (VALUE_OPTIONS.has(name)) index++
-    else if (VARIADIC_OPTIONS.has(name)) {
-      while (index + 1 < args.length && !(args[index + 1] as string).startsWith('-')) index++
+    if (separator < 0 && (INFO_OPTIONS.has(name) || name === '--no-open')) continue
+    if (name !== '--port' && name !== '--host') return `${COPERA_CODE_BIN}: unknown option ${name}; run ${COPERA_CODE_BIN} --help for the supported options`
+    let value: string | undefined
+    if (separator >= 0) value = arg.slice(separator + 1)
+    else {
+      value = args[index + 1]
+      if (value?.startsWith('-') === true) value = undefined
+      else index++
+    }
+    if (name === '--port' && (value === undefined || !/^\d{1,5}$/u.test(value) || Number(value) > 65_535)) {
+      return `${COPERA_CODE_BIN}: --port must be a number from 0 to 65535`
+    }
+    if (name === '--host' && (value === undefined || !LOOPBACK_BIND_HOSTS.has(value))) {
+      return `${COPERA_CODE_BIN}: --host must be 127.0.0.1, ::1, or localhost; ${COPERA_CODE_BIN} serves only this computer`
     }
   }
   return undefined

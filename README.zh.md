@@ -50,7 +50,7 @@ pnpm copera-code
 
 ## 数据与隐私
 
-Copera Code 将设置、登录凭证和会话保存在 `~/.copera-code` 中。设置 `COPERA_CODE_HOME` 可改用其他目录。Copera Code 不会读取或修改 DeepSeek Harness 安装的数据目录。
+Copera Code 将设置、登录凭证和会话保存在 `~/.copera-code` 中。设置 `COPERA_CODE_HOME` 可改用其他目录；桌面应用只在从终端启动时读取它，因为从程序坞、访达或开始菜单打开的应用会在读取 shell 配置文件之前确定数据目录。在 shell 配置文件中导出的 `COPERA_CODE_TOKEN` 与 `COPERA_CODE_API_ORIGIN` 对每种启动方式都生效。Copera Code 不会读取或修改 DeepSeek Harness 安装的数据目录。
 
 此版本不发送任何遥测数据。
 

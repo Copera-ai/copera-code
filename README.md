@@ -46,7 +46,7 @@ For headless or remote use without a browser, create a Copera personal access to
 
 ## Data and privacy
 
-Copera Code stores its settings, sign-in credentials, and sessions in `~/.copera-code`. Set `COPERA_CODE_HOME` to use another directory. Copera Code does not read or change the data directory of a DeepSeek Harness installation.
+Copera Code stores its settings, sign-in credentials, and sessions in `~/.copera-code`. Set `COPERA_CODE_HOME` to use another directory; the desktop app reads it only when it is launched from a terminal, because an app opened from the Dock, Finder, or Start menu resolves its data directory before it reads your shell profile. `COPERA_CODE_TOKEN` and `COPERA_CODE_API_ORIGIN` exported in a shell profile apply to every launch. Copera Code does not read or change the data directory of a DeepSeek Harness installation.
 
 This version sends no telemetry.
 

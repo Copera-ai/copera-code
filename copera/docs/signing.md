@@ -14,7 +14,7 @@ The identity is fixed in `apps/desktop/scripts/product-identity.mjs`; packaging 
 | Artifact names | `copera-code-<version>-mac-<arch>.dmg` / `.zip`, `copera-code-<version>-win-x64.exe`; unsigned builds add `-unsigned`, unnotarized ones `-unnotarized` |
 | Packaged manifest name | `copera-code` (electron-builder updater cache `copera-code-updater`) |
 | Electron user data | `~/Library/Application Support/Copera Code` (macOS), `%APPDATA%\Copera Code` (Windows) |
-| Copera Code data home | `~/.copera-code`, or `COPERA_CODE_HOME`; an inherited `DSH_HOME` is ignored |
+| Copera Code data home | `~/.copera-code`, or `COPERA_CODE_HOME`; an inherited `DSH_HOME` is ignored. `COPERA_CODE_HOME` takes effect only when the app is launched from a terminal: a Dock, Finder, or Start-menu launch resolves the data home from the session environment before the login-shell read, and the home cannot move once paths are resolved. `COPERA_CODE_TOKEN` and `COPERA_CODE_API_ORIGIN` from the login shell are applied to the Host for every launch. |
 | Windows publisher and macOS company in package metadata | `Copera` |
 
 `DSH_DESKTOP_APP_ID` is optional. Leave it unset; it exists only to give a test install its own reverse-DNS identity. The URL scheme needs no entitlement or signing change: it is an `Info.plist` entry, and sign-in does not use it (the OAuth redirect returns to the Host's loopback server at `http://127.0.0.1:<port>/oauth/callback`).

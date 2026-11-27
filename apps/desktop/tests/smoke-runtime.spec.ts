@@ -106,7 +106,8 @@ it('uses the private readiness Cookie for every packaged runtime HTTP probe', as
   vi.spyOn(console, 'log').mockImplementation(() => {})
   await smokeDesktopRuntime(join(root, 'payload'), process.execPath, runtime, {}, resources)
   expect(requests.map(request => request.path)).toEqual([
-    '/', '/desktop-smoke', '/desktop-smoke-install', '/desktop-smoke-installed', '/desktop-smoke-skills',
+    // COPERA: the Copera profile mounts no Plugin Manager, so the smoke installs no bundle through the Host.
+    '/', '/desktop-smoke', '/desktop-smoke-skills',
     '/desktop-smoke-office/docx', '/desktop-smoke-office/xlsx', '/desktop-smoke-office/pptx',
     '/desktop-smoke-office-operations/docx', '/desktop-smoke-office-operations/xlsx', '/desktop-smoke-office-operations/pptx',
   ])

@@ -79,24 +79,6 @@ export const LOCALE_OVERRIDES: Readonly<Record<string, NamespaceOverrides>> = {
     en: { 'details.failure.auth': 'The Copera access token was rejected. Sign in to Copera Code again, or check COPERA_CODE_TOKEN.' },
     pt: { 'details.failure.auth': 'O token de acesso da Copera foi recusado. Entre de novo no Copera Code ou verifique COPERA_CODE_TOKEN.' },
   },
-  actionCards: {
-    en: { 'settings.description': 'Shows recommendation cards below the answer for what you want from Copera Code' },
-    pt: { 'settings.description': 'Mostra cartões de recomendação abaixo da resposta para suas necessidades personalizadas no Copera Code' },
-  },
-  creationRecommendations: {
-    en: { 'restart-required': 'The change is saved. Restart Copera Code to apply it.' },
-    pt: { 'restart-required': 'A alteração foi salva. Reinicie o Copera Code para aplicá-la.' },
-  },
-  pluginRecommendations: {
-    en: {
-      'version-error': 'This plugin is incompatible with this Copera Code version. Update Copera Code and retry.',
-      'restart-required': 'Saved. Restart Copera Code to apply.',
-    },
-    pt: {
-      'version-error': 'Este plug-in não é compatível com esta versão do Copera Code. Atualize o Copera Code e tente novamente.',
-      'restart-required': 'Salvo. Reinicie o Copera Code para aplicar.',
-    },
-  },
   'schedule.manager': {
     en: {
       'recommend.pluginCompat.description': 'When a new Copera Code version ships, check whether installed and self-made plugins need changes.',

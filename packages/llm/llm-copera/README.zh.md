@@ -34,12 +34,12 @@ kind: "package-reference"
 
 两个模型都声明 200,000 token 上下文窗口、16,000 token 默认输出上限、文本与图像输入，且没有推理强度档位。模型列表与登录状态无关。
 
-Shikai 的 HTTP 错误，以及已打开的流中的 `data: {"error":…}` 事件，按状态码以及错误信封中的 `code` 与 `type` 映射为 harness 失败代码。`insufficient_quota`、带 `x-should-retry: false` 的 429 以及 402 变为 `QUOTA`。其他 429 与 `rate_limit_exceeded` 变为 `RATE_LIMIT`，并把 `retry-after` 作为 `providerRetryAfterMs`。401 与 `permission_denied` 变为 `AUTH`。服务端错误变为 `SERVER`。每个失败都带有 Shikai 自己的消息；失败来自 HTTP 响应时还带有 HTTP 状态。该路由使用默认重试策略：重试 `RATE_LIMIT` 与服务端失败，不重试 `QUOTA` 与 `AUTH`。`src/errors.ts` 中的 `mapShikaiError` 返回同样的分类，并附带用于界面文案的 `messageKey`。
+Shikai 的 HTTP 错误，以及已打开的流中的 `data: {"error":…}` 事件，按状态码以及错误信封中的 `code` 与 `type` 映射为 harness 失败代码。`insufficient_quota`、带 `x-should-retry: false` 的 429 以及 402 变为 `QUOTA`。其他 429 与 `rate_limit_exceeded` 变为 `RATE_LIMIT`，并把 `retry-after` 作为 `providerRetryAfterMs`。401 与 `permission_denied` 变为 `AUTH`。服务端错误变为 `SERVER`；带 `x-should-retry: false` 的服务端错误以 `HTTP_<status>` 作为代码，重试策略不会重复它。每个失败都带有 Shikai 自己的消息；失败来自 HTTP 响应时还带有 HTTP 状态。该路由使用默认重试策略：重试 `RATE_LIMIT` 与服务端失败，不重试 `QUOTA` 与 `AUTH`。`src/errors.ts` 中的 `mapShikaiError` 返回同样的分类，并附带用于界面文案的 `messageKey`。
 
 <a id="understand-the-implementation"></a>
 ## 实现说明
 
-`CoperaAdapter` 把模型元数据委托给一个由固定 `openai-completions` 配置构建的 `PiAiAdapter`；该配置由本包通过 pi-ai 公开的 `createProvider` API 组装，其流与图像限制等于 llm-pi-ai 的配置默认值。每次流式调用都构建自己的 `PiAiAdapter`，其 `fetch` 只属于该次调用，因此并发请求不共享令牌或错误状态。该 `fetch` 在 Chat Completions 请求体中加入 `include_reasoning: true`，执行唯一一次 401 重放，记录最终的非 2xx 响应，并对 200 流的每个数据块先转发、再扫描第一个错误事件；随后适配器用分类后的失败替换 pi-ai 展平的错误文本。pi-ai 在该路由上拿不到任何已存储凭据或环境变量。请求使用 `system` 角色、`max_tokens` 与 `stream_options.include_usage`，不发送 `store`。
+`CoperaAdapter` 把模型元数据委托给一个由固定 `openai-completions` 配置构建的 `PiAiAdapter`；该配置由本包通过 pi-ai 公开的 `createProvider` API 组装，其流与图像限制等于 llm-pi-ai 的配置默认值。每次流式调用都构建自己的 `PiAiAdapter`，其 `fetch` 只属于该次调用，因此并发请求不共享令牌或错误状态。该 `fetch` 在发送前拒绝任何源不是所配置 Copera 源的请求，不跟随重定向（`redirect: 'error'`），以 `User-Agent: copera-code/<DSH_COPERA_PRODUCT_VERSION> (+https://github.com/Copera-ai/copera-code)` 替代 harness 署名且不发送任何 `x-deepseek-*` 头，在 Chat Completions 请求体中加入 `include_reasoning: true`，执行唯一一次 401 重放，记录最终的非 2xx 响应，并对 200 流的每个数据块先转发、再扫描第一个错误事件；随后适配器用分类后的失败替换 pi-ai 展平的错误文本。pi-ai 在该路由上拿不到任何已存储凭据或环境变量。请求使用 `system` 角色、`max_tokens` 与 `stream_options.include_usage`，不发送 `store`。
 
 <a id="further-exploration"></a>
 ## 延伸阅读

@@ -1,3 +1,4 @@
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { resolveLaunch, resolveProductEnv } from '../src/resolve-launch.ts'
 
@@ -38,9 +39,44 @@ describe('resolveLaunch argv', () => {
       .toEqual(['--profile', 'copera', '--host', '127.0.0.1', '--port=0', '--no-open'])
   })
 
-  it('does not mistake an option value for a positional', () => {
-    expect(launch(['--trusted-host', 'a.example', 'b.example', '--no-open']).argv)
-      .toEqual(['--profile', 'copera', '--trusted-host', 'a.example', 'b.example', '--no-open'])
+  it.each([
+    [['--port', '4000']], [['--port=4000']], [['--port', '0']], [['--host', '127.0.0.1']], [['--host=::1']],
+    [['--host', 'localhost']], [['--no-open']], [['-h']], [['-V']], [['--help']], [['--version']],
+  ])('accepts the local-use flag %j', (argv) => {
+    expect(launch(argv).argv).toEqual(['--profile', 'copera', ...argv])
+  })
+
+  it.each([
+    [['--no-open', '--version'], '--version'],
+    [['--port', '4000', '-h'], '-h'],
+    [['--host=::1', '-V', '--help'], '-V'],
+  ])('runs only the first information flag of %j', (argv, flag) => {
+    expect(launch(argv).argv).toEqual(['--profile', 'copera', flag])
+  })
+
+  it.each([
+    [['--public-url', 'https://a.example/']], [['--public-url=https://a.example/']], [['--trusted-host', 'a.example']],
+    [['--trusted-host=a.example']], [['--tls-cert', 'c.pem']], [['--tls-key=k.pem']], [['--patch', 'x.yml']],
+    [['--patch=x.yml']], [['--profile=web']], [['--dump-config']],
+  ])('refuses the remote-serving or profile flag %j', (argv) => {
+    expect(rejection(argv)).toMatch(/^copera-code: --[a-z-]+ is not supported/)
+  })
+
+  it.each([
+    [['--host', '0.0.0.0']], [['--host=10.0.0.7']], [['--host', '[::1]']], [['--host']], [['--host', '--no-open']],
+  ])('refuses the non-loopback or missing host in %j without echoing it', (argv) => {
+    const error = rejection(argv)
+    expect(error).toMatch(/^copera-code: --host must be 127\.0\.0\.1, ::1, or localhost/)
+    expect(error).not.toContain('10.0.0.7')
+    expect(error).not.toContain('0.0.0.0')
+  })
+
+  it.each([[['--port', 'abc']], [['--port=99999']], [['--port']], [['--port=-1']]])('refuses the invalid port in %j', (argv) => {
+    expect(rejection(argv)).toMatch(/^copera-code: --port must be a number from 0 to 65535/)
+  })
+
+  it.each([[['--unknown']], [['--no-opens']], [['--open']], [['-x']], [['--port4000']]])('refuses the unknown flag %j', (argv) => {
+    expect(rejection(argv)).toMatch(/^copera-code: unknown option --?[a-z0-9-]+; run copera-code --help/)
   })
 
   it.each([
@@ -85,6 +121,15 @@ describe('resolveLaunch environment', () => {
 
   it('treats a blank COPERA_CODE_HOME as unset', () => {
     expect(launch([], { COPERA_CODE_HOME: '  ' }).env.DSH_HOME).toBe(`${HOME}/.copera-code`)
+    expect(launch([], { COPERA_CODE_HOME: '' }).env.DSH_HOME).toBe(`${HOME}/.copera-code`)
+  })
+
+  it('trims COPERA_CODE_HOME, expands ~, and makes it absolute', () => {
+    expect(launch([], { COPERA_CODE_HOME: '  /data/copera  ' }).env.DSH_HOME).toBe('/data/copera')
+    expect(launch([], { COPERA_CODE_HOME: '~' }).env.DSH_HOME).toBe(HOME)
+    expect(launch([], { COPERA_CODE_HOME: '~/copera' }).env.DSH_HOME).toBe(`${HOME}/copera`)
+    expect(launch([], { COPERA_CODE_HOME: 'relative/home' }).env.DSH_HOME).toBe(resolve('relative/home'))
+    expect(launch([], { COPERA_CODE_HOME: '~other/x' }).env.DSH_HOME).toBe(resolve('~other/x'))
   })
 
   it('always disables telemetry', () => {
@@ -113,12 +158,21 @@ describe('resolveLaunch environment', () => {
       .toBe('https://api.staging.copera.ai')
   })
 
-  it.each(['http://evil', 'not a url', 'file:///etc/passwd'])('rejects the non-https origin %s', (origin) => {
-    expect(rejection([], { COPERA_CODE_API_ORIGIN: origin })).toMatch(/COPERA_CODE_API_ORIGIN/)
+  it.each([
+    'http://evil', 'not a url', 'file:///etc/passwd', 'http://localhost:8080', 'https://api.example/path',
+    'https://user:pass@api.example', 'https://api.example/?q=1', 'https://api.example/#frag', 'http://10.0.0.7:80',
+  ])('rejects the origin %s without echoing it', (origin) => {
+    const error = rejection([], { COPERA_CODE_API_ORIGIN: origin })
+    expect(error).toMatch(/COPERA_CODE_API_ORIGIN must be an https origin/)
+    expect(error).not.toContain(origin)
+    expect(error).not.toMatch(/evil|example|pass|10\.0\.0\.7|localhost/)
   })
 
-  it('does not echo the rejected origin value', () => {
-    expect(rejection([], { COPERA_CODE_API_ORIGIN: 'http://secret-host' })).not.toContain('secret-host')
+  it.each([
+    ['https://api.example', 'https://api.example'], ['https://api.example/', 'https://api.example'],
+    ['http://127.0.0.1:8080', 'http://127.0.0.1:8080'], ['http://[::1]:9000/', 'http://[::1]:9000'],
+  ])('accepts the bare origin %s as %s', (origin, normalized) => {
+    expect(launch([], { COPERA_CODE_API_ORIGIN: origin }).env.DSH_COPERA_API_ORIGIN).toBe(normalized)
   })
 })
 

@@ -17,19 +17,25 @@ const AUTHORIZE = 'http://127.0.0.1:9911/oauth/authorize?state=s'
 
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
-/** A Host state stream the test pushes into; it ends when its signal aborts. */
+/** A Host state stream the test pushes into; it ends when its signal aborts or the test ends it. */
 function hostStream() {
   const pending: CoperaAccountState[] = []
   let wake: (() => void) | undefined
+  let opened = 0
+  let end: (() => void) | undefined
   const push = (state: CoperaAccountState) => { pending.push(state); wake?.() }
   async function* watch(signal: AbortSignal): AsyncGenerator<CoperaAccountState> {
-    while (!signal.aborted) {
+    opened++
+    let ended = false
+    end = () => { ended = true; wake?.() }
+    while (!signal.aborted && !ended) {
       const next = pending.shift()
       if (next !== undefined) { yield next; continue }
       await new Promise<void>((resolve) => { wake = resolve; signal.addEventListener('abort', () => { resolve() }, { once: true }) })
     }
+    if (ended) throw new Error('carrier lost')
   }
-  return { push, watch }
+  return { push, watch, opened: () => opened, end: () => { end?.() } }
 }
 
 async function fixture() {
@@ -148,4 +154,37 @@ it('cancels, signs out and reloads through the Remote', async () => {
   expect(b.getState).toHaveBeenCalledOnce()
   expect(actions.hooks.coperaAccount.getSnapshot()).toEqual({ state: signedOut, failed: false })
   await b.fiber.dispose()
+})
+
+it('resubscribes with backoff after the state stream ends and reads the state on focus until it is back', async () => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  try {
+    const b = await fixture()
+    const account = face(b.ctx, LoginGate).hooks.coperaAccount
+    await vi.waitFor(() => { expect(b.host.opened()).toBe(1) })
+    b.host.end()
+    await vi.waitFor(() => { expect(account.getSnapshot().failed).toBe(true) })
+    window.dispatchEvent(new Event('focus'))
+    await vi.waitFor(() => { expect(b.getState).toHaveBeenCalledOnce() })
+    document.dispatchEvent(new Event('visibilitychange'))
+    await vi.waitFor(() => { expect(b.getState).toHaveBeenCalledTimes(2) })
+    expect(b.host.opened()).toBe(1)
+    await vi.advanceTimersByTimeAsync(1_000)
+    await vi.waitFor(() => { expect(b.host.opened()).toBe(2) })
+    // A subscription that ends again before delivering anything doubles the delay.
+    b.host.end()
+    await vi.advanceTimersByTimeAsync(1_000)
+    expect(b.host.opened()).toBe(2)
+    await vi.advanceTimersByTimeAsync(1_000)
+    await vi.waitFor(() => { expect(b.host.opened()).toBe(3) })
+    b.host.push({ ...signedOut, status: 'signed-in', via: 'oauth' })
+    await vi.waitFor(() => { expect(account.getSnapshot()).toMatchObject({ failed: false, state: { status: 'signed-in' } }) })
+    window.dispatchEvent(new Event('focus'))
+    expect(b.getState).toHaveBeenCalledTimes(2)
+    // After a delivered state the next loss starts again from the first delay.
+    b.host.end()
+    await vi.advanceTimersByTimeAsync(1_000)
+    await vi.waitFor(() => { expect(b.host.opened()).toBe(4) })
+    await b.fiber.dispose()
+  } finally { vi.useRealTimers() }
 })

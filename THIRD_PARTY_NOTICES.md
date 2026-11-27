@@ -185,6 +185,10 @@ pnpm applies local patches to the following packages at install time, so shipped
 
 The optional experimental Inspector distributes a locally compiled copy of [chrome-devtools-frontend 1.0.1638082](https://www.npmjs.com/package/chrome-devtools-frontend/v/1.0.1638082), from upstream revision [0e1186138ed519d9659c1874bf6375eca4483c72](https://chromium.googlesource.com/devtools/devtools-frontend/+/0e1186138ed519d9659c1874bf6375eca4483c72). The build includes the Chromium [BSD-3-Clause license](packages/experimental/inspector/assets/devtools/LICENSE) and the third-party license and notice files supplied by the npm source. The Chromium root license does not replace those dependencies' licenses.
 
+## Fonts
+
+`@deepseek-ai/dsh-client-ui-brand-copera` embeds the variable Latin subset of [Inter](https://github.com/rsms/inter), Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter), under the SIL Open Font License 1.1. The complete license text ships beside the font in [`packages/client/ui-brand-copera/src/client/fonts/OFL.txt`](packages/client/ui-brand-copera/src/client/fonts/OFL.txt) and in every Copera Code package next to this file as `OFL-Inter.txt`.
+
 
 ## Official Claude Code platform payloads
 

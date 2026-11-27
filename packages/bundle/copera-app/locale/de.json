@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Copera Code-Produktsperre",
+    "description": "Verhindert den Start, wenn eine spätere Patch-Ebene eine Zeile, die Copera Code deaktiviert hält, wieder aktiviert, eine andere Modellroute registriert oder das Copera Code-Paket entfernt."
+  }
+}

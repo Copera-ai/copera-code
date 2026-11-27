@@ -59,7 +59,14 @@ The `copera` profile stacks `dsh-base`, `dsh-web-app`, and `dsh-copera-app`. The
 pnpm exec vitest run packages/bundle/copera-app/tests/patch-ids.spec.ts packages/bundle/copera-app/tests/wiring.spec.ts
 ```
 
-The spec only catches rows it knows about. Read every new or changed row in the lower layers and in the shipped profile templates:
+The spec also snapshots the exact set of enabled rows (id and package) of the `copera` composition and of the Desktop composition on macOS and Windows, and the preset ids, in `packages/bundle/copera-app/tests/expected/` (`enabled-rows-copera.json`, `enabled-rows-desktop-darwin.json`, `enabled-rows-desktop-win32.json`, `presets.json`). Any upstream change that adds, removes, or renames an enabled row or a preset fails it. Review each difference with the decision rules below, change `cordis.patch.yml` (and `LOCKED_ROW_IDS` in `src/product-lock.ts` for a row you switch off) as needed, then rewrite the snapshots and review their diff before committing:
+
+```sh
+pnpm exec vitest run packages/bundle/copera-app -u
+git diff packages/bundle/copera-app/tests/expected/
+```
+
+A row that registers a model route other than `copera`, a telemetry exporter, or plugin installation must be switched off; the `copera-product-lock` guard fails startup otherwise. Read every new or changed row in the lower layers and in the shipped profile templates:
 
 ```sh
 git diff "$PREV" upstream/master -- \

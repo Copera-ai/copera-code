@@ -1,8 +1,10 @@
 /**
  * Check a packed `@copera.ai/code` tarball: its contents exclude the forbidden and excluded packages, it installs
  * into an empty directory, `copera-code --help` prints the Copera Code help, `copera-code --version` prints the
- * package version before the harness version, `copera-code headless` is refused, and
- * `copera-code --no-open --port 0` serves a page titled "Copera Code".
+ * package version before the harness version, `copera-code headless`, `--profile=web`, and `--patch x` are refused, no
+ * tests, `.env` files, nested tarballs, or source maps naming local paths ship, the Inter licence ships, the
+ * openai-completions provider module loads without `@anthropic-ai/sdk`, and `copera-code --no-open --port 0` serves a
+ * page titled "Copera Code".
  *
  * Usage: `pnpm exec tsx scripts/copera/verify-pack.ts --tarball <file.tgz> [--work <dir>]`. The install fetches the
  * platform optional dependencies from the npm registry; nothing contacts a Copera or DeepSeek host, and the
@@ -11,12 +13,15 @@
 
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
 import { isEntry } from '../release/process.ts'
 import { excludedBundles, indexPackages, isExcludedPackage } from './stage.ts'
+
+/** The checkout the package was built from; its path must not appear in shipped source maps. */
+const ROOT = resolve(import.meta.dirname, '../..')
 
 /** How long the server may take to print its URL. */
 const START_TIMEOUT_MS = 120_000
@@ -39,6 +44,33 @@ export function excludedTarballEntries(entries: readonly string[]): string[] {
     }
   }
   return [...offending].sort()
+}
+
+/**
+ * List tarball entries that must not ship: `.env` files and nested tarballs anywhere, and tests or specs of the
+ * first-party packages (`@copera.ai/code` itself and every bundled `@deepseek-ai/*` package).
+ * @param entries - Paths inside the tarball.
+ * @returns The offending entries, sorted.
+ */
+export function strayTarballEntries(entries: readonly string[]): string[] {
+  return entries.filter((entry) => {
+    const base = entry.split('/').at(-1) ?? ''
+    if (base.startsWith('.env') || base.endsWith('.tgz')) return true
+    const firstParty = !entry.includes('/node_modules/') || /\/node_modules\/@deepseek-ai\/[^/]+\//u.test(entry)
+    if (!firstParty) return false
+    const local = entry.replace(/^.*\/node_modules\/@deepseek-ai\/[^/]+\//u, '')
+    return /(?:^|\/)(?:tests?|__tests__)\//u.test(local) || /\.(?:spec|test)\.[cm]?[jt]sx?$/u.test(base)
+  }).sort()
+}
+
+/**
+ * List source maps whose text names a local absolute path.
+ * @param files - Extracted source-map files and their contents.
+ * @param localRoots - Absolute directories of the build machine, such as the checkout and the home directory.
+ * @returns The offending source-map paths, sorted.
+ */
+export function sourceMapsWithLocalPaths(files: ReadonlyArray<{ path: string; text: string }>, localRoots: readonly string[]): string[] {
+  return files.filter(file => localRoots.some(root => root !== '' && file.text.includes(root))).map(file => file.path).sort()
 }
 
 /**
@@ -141,6 +173,19 @@ async function main(): Promise<void> {
     const excluded = excludedTarballEntries(entries)
     check(excluded.length === 0, `the tarball (${String(entries.length)} entries) contains no excluded package${excluded.length === 0 ? '' : `: ${excluded.join(', ')}`}`)
 
+    const stray = strayTarballEntries(entries)
+    check(stray.length === 0, `the tarball contains no tests, .env files, or nested tarballs${stray.length === 0 ? '' : `: ${stray.slice(0, 20).join(', ')}`}`)
+    const extracted = join(work, 'extracted')
+    mkdirSync(extracted)
+    capture('tar', ['-xzf', tarball, '-C', extracted])
+    const maps = entries.filter(entry => entry.endsWith('.map'))
+      .map(entry => ({ path: entry, text: readFileSync(join(extracted, entry), 'utf8') }))
+    const leaking = sourceMapsWithLocalPaths(maps, [ROOT, homedir()])
+    check(leaking.length === 0, `no source map (${String(maps.length)} checked) names a local absolute path${leaking.length === 0 ? '' : `: ${leaking.slice(0, 20).join(', ')}`}`)
+    const interLicense = join(extracted, 'package', 'OFL-Inter.txt')
+    check(existsSync(interLicense) && readFileSync(interLicense, 'utf8').startsWith('Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)\n')
+      && readFileSync(interLicense, 'utf8').includes('SIL OPEN FONT LICENSE Version 1.1'), 'the package ships the Inter licence (OFL-1.1) beside THIRD_PARTY_NOTICES.md')
+
     const consumer = join(work, 'consumer')
     mkdirSync(consumer)
     writeFileSync(join(consumer, 'package.json'), `${JSON.stringify({ name: 'copera-code-verify', version: '0.0.0', private: true, dependencies: { '@copera.ai/code': pathToFileURL(tarball).href } }, null, 2)}\n`)
@@ -164,6 +209,17 @@ async function main(): Promise<void> {
 
     const headless = attempt(process.execPath, [bin, 'headless'], { cwd: consumer, env })
     check(headless.status !== 0 && headless.stderr.includes('not supported'), 'copera-code headless is refused')
+    for (const args of [['--profile=web'], ['--patch', 'x.yml']]) {
+      const refused = attempt(process.execPath, [bin, ...args], { cwd: consumer, env })
+      check(refused.status !== 0 && refused.stderr.includes('is not supported'), `copera-code ${args.join(' ')} is refused`)
+    }
+
+    const piAi = installed.find(pkg => pkg.manifest.name === '@earendil-works/pi-ai')
+    if (piAi === undefined) throw new Error('verify-pack: the installed tree has no @earendil-works/pi-ai')
+    check(!installed.some(pkg => pkg.manifest.name === '@anthropic-ai/sdk'), 'the installed tree has no @anthropic-ai/sdk')
+    const completions = pathToFileURL(join(piAi.dir, 'dist', 'api', 'openai-completions.js')).href
+    const load = attempt(process.execPath, ['--input-type=module', '-e', `await import(${JSON.stringify(completions)}); console.log('loaded')`], { cwd: consumer, env })
+    check(load.status === 0 && load.stdout.includes('loaded'), 'the openai-completions provider module of the copera route loads without @anthropic-ai/sdk')
 
     const page = await servedPage(bin, consumer, env)
     check(/<title>Copera Code<\/title>/.test(page), 'the served page is titled "Copera Code"')

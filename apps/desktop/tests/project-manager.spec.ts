@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resolveDesktopPaths } from '../src/paths.ts'
-import { createRuntimeProjectMetadata, DesktopProjectManager } from '../src/project-manager.ts'
+import { createRuntimeProjectMetadata, DesktopProjectManager, desktopProfileTemplate } from '../src/project-manager.ts'
 import { DESKTOP_PACKAGE_SET_FILE, DESKTOP_PACKAGES_DIR } from '../src/core-package-set.ts'
 import { DESKTOP_HOST_PROTOCOL_VERSION } from '../src/host-protocol.ts'
 import { PROFILE_TEMPLATES } from '@deepseek-ai/dsh-official-bundles'
@@ -338,6 +338,13 @@ describe('desktop link-backend projections', () => {
 
 // COPERA: the Desktop profile keeps the internal name `desktop` and composes the Copera Code bundles.
 describe('Copera Code Desktop profile', () => {
+  // COPERA: Desktop composes only the copera template.
+  it('selects the copera template and refuses to fall back to another profile', () => {
+    expect(desktopProfileTemplate(PROFILE_TEMPLATES)).toBe(PROFILE_TEMPLATES.copera)
+    const { copera: _copera, ...withoutCopera } = PROFILE_TEMPLATES
+    expect(() => desktopProfileTemplate(withoutCopera)).toThrow(/copera/u)
+  })
+
   it('initializes the profile with the copera template bundles', async () => {
     const { manager } = setup()
     await manager.applyRelease()

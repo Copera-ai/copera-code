@@ -27,7 +27,8 @@ export interface DesktopElectronBuilderConfig {
   readonly extraResources: readonly [
     { readonly from: string, readonly to: 'runtime' },
     { readonly from: string, readonly to: 'icon.png' },
-    ...{ readonly from: string, readonly to: 'tray.ico' }[],
+    // COPERA: the legal files Copera Code ships beside the application archive.
+    ...{ readonly from: string, readonly to: 'LICENSE' | 'THIRD_PARTY_NOTICES.md' | 'OFL-Inter.txt' | 'tray.ico' }[],
   ]
   readonly mac: {
     readonly extendInfo: {

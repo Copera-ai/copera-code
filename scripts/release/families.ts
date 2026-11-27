@@ -12,10 +12,18 @@
 import { globSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
+  coperaClientBuildEnvironment,
   officialClientBuildEnvironment,
   readClientBuildRecord,
 } from '../client-build-environment.ts'
 import { ON_DEMAND_BUNDLES } from '../../packages/util/official-bundles/src/bundles.ts'
+
+// COPERA: `copera` packs the Copera Code Desktop runtime from a `copera` client build.
+/** Client build profiles a release pack can require of the built artifacts. */
+export const RELEASE_CLIENT_PROFILES = ['official', 'copera'] as const
+
+/** One of {@link RELEASE_CLIENT_PROFILES}. */
+export type ReleaseClientProfile = typeof RELEASE_CLIENT_PROFILES[number]
 
 /**
  * Dependency sections a consumer must publish after, because npm resolves them
@@ -111,8 +119,9 @@ export abstract class ReleaseFamily {
    * Assert that built artifacts match this release family's required profile.
    * Families without environment-selected artifacts accept every build tree.
    * @param _root - repository root containing generated artifacts.
+   * @param _clientProfile - client build profile the artifacts must carry.
    */
-  verifyBuildArtifacts(_root: string): void {}
+  verifyBuildArtifacts(_root: string, _clientProfile: ReleaseClientProfile = 'official'): void {} // COPERA: `_clientProfile`
 
   /**
    * Discover this family's members.
@@ -352,9 +361,12 @@ class DshFamily extends ReleaseFamily {
   ] as const
   readonly tagPrefix = 'dsh-v'
 
-  /** Require current artifacts from a complete official client build. */
-  override verifyBuildArtifacts(root: string): void {
-    readClientBuildRecord(root, officialClientBuildEnvironment(root))
+  /** Require current artifacts from a complete client build of the selected artifact profile. */
+  override verifyBuildArtifacts(root: string, clientProfile: ReleaseClientProfile = 'official'): void {
+    // COPERA: Copera Code Desktop packs a `copera` client build; `official` stays the default.
+    readClientBuildRecord(root, clientProfile === 'copera'
+      ? coperaClientBuildEnvironment(root)
+      : officialClientBuildEnvironment(root))
   }
 
   /**

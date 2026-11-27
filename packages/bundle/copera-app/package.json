@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-copera-app",
-  "description": "The Copera Code product bundle: the last patch layer of the copera profile over dsh-base and dsh-web-app, switching off DeepSeek-specific rows and routing defaults to Copera",
+  "description": "The Copera Code product bundle: the last patch layer of the copera profile over dsh-base and dsh-web-app, switching off DeepSeek-specific rows, routing defaults to Copera, and mounting the product-lock guard",
   "version": "0.2.3-alpha.2",
   "publishConfig": {
     "access": "public"
@@ -21,9 +21,11 @@
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./presets/*.patch.yml": "./presets/*.patch.yml",
     "./src/*": "./src/*",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
   },
   "files": [
+    "locale/*.json",
     "lib/index.js",
     "cordis.patch.yml",
     "presets/standard.patch.yml",
@@ -49,7 +51,8 @@
     "@deepseek-ai/dsh-client-ui-brand-copera": "workspace:*",
     "@deepseek-ai/dsh-client-ui-copera-account": "workspace:*",
     "@deepseek-ai/dsh-copera-account": "workspace:*",
-    "@deepseek-ai/dsh-llm-copera": "workspace:*"
+    "@deepseek-ai/dsh-llm-copera": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~"
@@ -58,6 +61,7 @@
     "@deepseek-ai/cordis": "workspace:~",
     "@deepseek-ai/cordis-plugin-loader": "workspace:~",
     "@deepseek-ai/dsh-app-boot": "workspace:*",
+    "@deepseek-ai/dsh-cmdline": "workspace:*",
     "@deepseek-ai/dsh-credentials-local": "workspace:*",
     "@deepseek-ai/dsh-llm": "workspace:*",
     "@deepseek-ai/dsh-official-bundles": "workspace:*"

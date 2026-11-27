@@ -816,6 +816,7 @@ ${patchedLines.join('\n')}
 
 The optional experimental Inspector distributes a locally compiled copy of [chrome-devtools-frontend ${DEVTOOLS_NPM_VERSION}](https://www.npmjs.com/package/chrome-devtools-frontend/v/${DEVTOOLS_NPM_VERSION}), from upstream revision [${DEVTOOLS_SOURCE_REVISION}](https://chromium.googlesource.com/devtools/devtools-frontend/+/${DEVTOOLS_SOURCE_REVISION}). The build includes the Chromium [BSD-3-Clause license](packages/experimental/inspector/assets/devtools/LICENSE) and the third-party license and notice files supplied by the npm source. The Chromium root license does not replace those dependencies' licenses.
 
+${renderCoperaFonts()}
 ${renderClaudeDistribution(claudeDistribution)}
 ${kitRuntime ? `
 ## LibreOffice conversion kit
@@ -851,6 +852,18 @@ ${bundledPython.map(dep => `| [\`${dep.name}\`](${dep.repo}) | ${dep.version} | 
 ## First-party native packages
 
 \`@deepseek-ai/node-addon-system\` (and its platform packages) is built and released from this repository under BSD 3-Clause. It is listed here for completeness; it is first-party, not third-party.
+`
+}
+
+// COPERA: the Copera Code brand package embeds the Inter font, which is not an npm dependency.
+/**
+ * The fonts section: font files committed to the repository and embedded in distributed browser artifacts.
+ * @returns the Markdown section, ending with a blank line.
+ */
+function renderCoperaFonts(): string {
+  return `## Fonts
+
+\`@deepseek-ai/dsh-client-ui-brand-copera\` embeds the variable Latin subset of [Inter](https://github.com/rsms/inter), Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter), under the SIL Open Font License 1.1. The complete license text ships beside the font in [\`packages/client/ui-brand-copera/src/client/fonts/OFL.txt\`](packages/client/ui-brand-copera/src/client/fonts/OFL.txt) and in every Copera Code package next to this file as \`OFL-Inter.txt\`.
 `
 }
 

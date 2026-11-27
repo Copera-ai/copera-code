@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import LlmRuntime, { BlockAssembler, createUserMessage } from '@deepseek-ai/dsh-llm'
 import type { FinishReason, GenerateOptions, Message, TokenUsage } from '@deepseek-ai/dsh-llm'
-import { CoperaAdapter } from '../src/adapter.ts'
+import { CoperaAdapter, ShikaiCall } from '../src/adapter.ts'
 import { COPERA_ROUTE_ID } from '../src/config.ts'
 import type { CoperaTokenSource } from '../src/token-source.ts'
 import { closeFakes, data, fakeShikai } from './fake-shikai.ts'
@@ -36,13 +36,15 @@ interface Assembled {
 
 let ctx: Context
 
+const USER_AGENT = 'copera-code/1.2.3 (+https://github.com/Copera-ai/copera-code)'
+
 beforeEach(async () => {
   ctx = new Context()
   await ctx.plugin(LlmRuntime)
 })
 
 function register(fake: FakeShikai, tokens: CoperaTokenSource): CoperaAdapter {
-  const adapter = new CoperaAdapter({ baseUrl: fake.baseUrl, tokens })
+  const adapter = new CoperaAdapter({ baseUrl: fake.baseUrl, tokens, userAgent: USER_AGENT })
   ctx.llm.registerAdapter([COPERA_ROUTE_ID], adapter)
   return adapter
 }
@@ -117,6 +119,36 @@ describe('CoperaAdapter request', () => {
     expect(roles).toEqual(['system', 'user'])
   })
 
+  it('identifies as Copera Code and sends no x-deepseek header', async () => {
+    const fake = await fakeShikai([{ sse: textAnswer }])
+    register(fake, new FakeTokens('tok-1'))
+    expect((await assemble(request())).finish).toEqual({ kind: 'stop' })
+    const [sent] = fake.requests
+    expect(sent?.headers['user-agent']).toBe(USER_AGENT)
+    expect(Object.keys(sent?.headers ?? {}).filter(name => name.startsWith('x-deepseek'))).toEqual([])
+  })
+
+  it('follows no redirect, so the token never reaches another origin', async () => {
+    const elsewhere = await fakeShikai([{ sse: textAnswer }])
+    const fake = await fakeShikai([{ status: 307, headers: { location: `${elsewhere.baseUrl}/chat/completions` }, body: {} }])
+    register(fake, new FakeTokens('tok-1'))
+    const failure = failureOf((await assemble(request())).finish)
+    expect(failure.code).not.toBe('SERVER')
+    expect(fake.requests).toHaveLength(1)
+    expect(elsewhere.requests).toEqual([])
+  })
+
+  it('refuses a request for another origin before sending anything', async () => {
+    const send = vi.spyOn(globalThis, 'fetch')
+    try {
+      const call = new ShikaiCall(new FakeTokens('tok-1'), { origin: 'http://127.0.0.1:9', userAgent: USER_AGENT })
+      await expect(call.fetch('https://elsewhere.example/public/v1/chat/completions', {
+        method: 'POST', headers: { authorization: 'Bearer tok-1' }, body: '{}',
+      })).rejects.toThrow(/llm-copera: refused a request outside http:\/\/127\.0\.0\.1:9/u)
+      expect(send).not.toHaveBeenCalled()
+    } finally { send.mockRestore() }
+  })
+
   it('sends the shikai-ultra-fast model id unchanged', async () => {
     const fake = await fakeShikai([{ sse: textAnswer }])
     register(fake, new FakeTokens('tok-1'))
@@ -186,6 +218,30 @@ describe('CoperaAdapter stream translation', () => {
     register(fake, new FakeTokens('tok-1'))
     const result = await settles(assemble(request()))
     expect(failureOf(result.finish)).toEqual({ code: 'SERVER', message: 'Every Shikai route failed to answer this request.' })
+  })
+
+  it('keeps a multi-byte character split across two writes, in content and in an in-stream error', async () => {
+    const encoder = new TextEncoder()
+    const split = (text: string, marker: string): Uint8Array[] => {
+      const bytes = encoder.encode(text)
+      // Cut inside the two-byte UTF-8 sequence of the marker character.
+      const cut = encoder.encode(text.slice(0, text.indexOf(marker))).length + 1
+      return [bytes.slice(0, cut), bytes.slice(cut)]
+    }
+    const content = await fakeShikai([{ sse: [
+      ...split(data({ choices: [{ index: 0, delta: { role: 'assistant', content: 'olá' }, finish_reason: null }] }), 'á'),
+      ...textAnswer.slice(1),
+    ] }])
+    register(content, new FakeTokens('tok-1'))
+    const result = await assemble(request())
+    expect(result.message.content).toEqual([{ type: 'text', text: 'olá' }])
+    ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    const quota = await fakeShikai([{ sse: split(
+      data({ error: { message: 'Orçamento de IA esgotado.', type: 'insufficient_quota', code: 'insufficient_quota' } }), 'ç',
+    ) }])
+    register(quota, new FakeTokens('tok-1'))
+    expect(failureOf((await settles(assemble(request()))).finish)).toEqual({ code: 'QUOTA', message: 'Orçamento de IA esgotado.' })
   })
 
   it('classifies an in-stream insufficient_quota event as QUOTA', async () => {
@@ -298,6 +354,17 @@ describe('CoperaAdapter error classification', () => {
     if (policy?.mode !== 'normal') throw new Error('unreachable')
     expect(policy.retryableCodes).not.toContain('QUOTA')
     expect(policy.retryableCodes).toContain('RATE_LIMIT')
+    expect(fake.requests).toHaveLength(1)
+  })
+
+  it('does not retry a server failure that forbids retries', async () => {
+    const fake = await fakeShikai([
+      { status: 503, headers: { 'x-should-retry': 'false' }, body: { error: { message: 'Shikai is draining.', type: 'server_error' } } },
+      { sse: textAnswer },
+    ])
+    register(fake, new FakeTokens('tok-1'))
+    const failure = failureOf((await assemble(request())).finish)
+    expect(failure).toEqual({ code: 'HTTP_503', status: 503, message: 'Shikai is draining.' })
     expect(fake.requests).toHaveLength(1)
   })
 

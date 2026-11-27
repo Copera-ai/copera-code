@@ -59,9 +59,9 @@ The menu occupies `settings.launcher`. It lists the profile's name, email, and w
 <a id="understand-the-implementation"></a>
 ## Understand the implementation
 
-The browser entry mounts the generated `coperaAccount` contribution with `ctx.remote.$mount`, then registers the UI once `remote.coperaAccount` is available; disposal removes the UI before the namespace. One reconnecting `$stream` over `watch()` publishes each state to a snapshot store shared by both registrations, and the response of `startSignIn` and `getState` is published the same way. A carrier loss keeps the last state and marks the view failed.
+The browser entry mounts the generated `coperaAccount` contribution with `ctx.remote.$mount`, then registers the UI once `remote.coperaAccount` is available; disposal removes the UI before the namespace. One reconnecting `$stream` over `watch()` publishes each state to a snapshot store shared by both registrations, and the response of `startSignIn` and `getState` is published the same way. A carrier loss keeps the last state and marks the view failed. When the stream ends or fails, the client opens it again after 1 second, doubling the delay after each subscription that delivered nothing, up to 30 seconds; until a state arrives, regaining window focus or visibility reads `getState` once. A failed start belongs to the state it was made from, so a newer Host state, such as an expired session, replaces the failed screen. The screen stacks above every other shell layer, toasts and portaled menus included.
 
-A plain browser blocks a tab opened after an await, so the click opens a blank tab first, clears its opener, and navigates it to `attempt.authorizeUrl` when `startSignIn` returns; a refused start closes it. The desktop shell routes every `window.open` of an http(s) address to the system browser and denies the window, so the desktop client opens the address directly. Open browser again calls `window.open` from the click in both clients.
+A plain browser blocks a tab opened after an await, so the click opens a blank tab first, clears its opener, and navigates it to `attempt.authorizeUrl` when `startSignIn` returns; a refused start closes it. An `authorizeUrl` that is not `https:`, or `http:` on `127.0.0.1` or `[::1]`, is never opened. The desktop shell routes every `window.open` of an http(s) address to the system browser and denies the window, so the desktop client opens the address directly. Open browser again calls `window.open` from the click in both clients.
 
 Every color comes from `--dsw-*` theme tokens: the primary button uses `--dsw-alias-brand-primary` with `--dsw-alias-label-primary-foreground` text, and the screen uses `--dsw-alias-bg-base`. The Copera token layer of `ui-brand-copera` sets these to the Copera blue, white, and `#050505` in dark mode.
 
@@ -88,6 +88,7 @@ None; the package does not take part in building model requests.
 
 - The Copera blue is a package-local literal until the Copera theme publishes a token for it.
 - The remaining time is computed from the browser clock against the Host's `expiresAt`; clock skew between the two shifts the display, not the Host's expiry.
+- A page opened at `localhost` signs in with the `127.0.0.1` callback origin, because the client cannot ask the Host which loopback address it is bound to; a Host started with `--host ::1` and opened at `localhost` therefore cannot complete a sign-in. Open it at `http://[::1]:<port>` instead.
 - A plain browser whose pop-up blocker also blocks the blank tab opened during the click shows the waiting screen without a tab; Open browser again opens it.
 
 <a id="dev-note"></a>

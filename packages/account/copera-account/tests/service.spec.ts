@@ -239,3 +239,67 @@ it('removes the callback listener and provided token source on disposal', async 
   expect((await fetch(callbackUrl(started, 'code=c'))).status).not.toBe(200)
   expect(f.server.count('authorization_code')).toBe(0)
 })
+
+it('leaves no stored token when sign-out wins over a sign-in whose grant is being stored', async () => {
+  const f = await fixture()
+  const started = await f.service.startSignIn(f.callbackOrigin, 'web')
+  // Hold the grant write after the code exchange succeeded, then sign out inside that window.
+  const writing = Promise.withResolvers<undefined>()
+  const release = Promise.withResolvers<undefined>()
+  const write = f.store.write.bind(f.store)
+  const spy = vi.spyOn(GrantStore.prototype, 'write').mockImplementation(async (grant) => {
+    writing.resolve(undefined)
+    await release.promise
+    return write(grant)
+  })
+  try {
+    const callback = fetch(callbackUrl(started, 'code=the-code'))
+    await writing.promise
+    const signOut = f.service.signOut()
+    release.resolve(undefined)
+    await Promise.all([callback, signOut])
+  } finally { spy.mockRestore() }
+  expect(await f.store.read()).toBeNull()
+  expect((await f.service.getState()).status).toBe('signed-out')
+  expect(await f.ctx.coperaTokens.getAccessToken()).toBeUndefined()
+})
+
+it('leaves no stored token when sign-out races a refresh that rotates the grant', async () => {
+  const f = await fixture()
+  await f.store.write({ accessToken: 'access-0', refreshToken: 'refresh-0', expiresAt: Date.now() - 1_000, account: null })
+  f.server.liveRefreshTokens.add('refresh-0')
+  const arrived = Promise.withResolvers<undefined>()
+  const answer = Promise.withResolvers<undefined>()
+  f.server.override(async (form) => {
+    if (form.get('grant_type') !== 'refresh_token') return false
+    arrived.resolve(undefined)
+    await answer.promise
+    return false
+  })
+  const refresh = f.ctx.coperaTokens.getAccessToken()
+  await arrived.promise
+  const signOut = f.service.signOut()
+  answer.resolve(undefined)
+  await Promise.allSettled([refresh, signOut])
+  expect(await f.store.read()).toBeNull()
+  expect((await f.service.getState()).status).toBe('signed-out')
+})
+
+it('never puts a token, code, or verifier in getState or watch payloads', async () => {
+  const f = await fixture()
+  const seen: CoperaAccountState[] = []
+  const states = new AbortController()
+  const collecting = (async () => { for await (const state of f.service.watch(states.signal)) seen.push(state) })()
+  const started = await f.service.startSignIn(f.callbackOrigin, 'web')
+  seen.push(started)
+  expect((await fetch(callbackUrl(started, 'code=the-secret-code'))).status).toBe(200)
+  seen.push(await f.service.getState())
+  await f.until(state => state.status === 'signed-in')
+  states.abort()
+  await collecting
+  const verifier = f.server.requests.find(r => r.form.get('grant_type') === 'authorization_code')?.form.get('code_verifier')
+  expect(verifier).toBeTruthy()
+  const payloads = JSON.stringify(seen)
+  expect(seen.some(state => state.status === 'signed-in')).toBe(true)
+  for (const secret of ['access-1', 'refresh-1', 'the-secret-code', verifier ?? '']) expect(payloads).not.toContain(secret)
+})

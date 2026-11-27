@@ -13,4 +13,4 @@ export {
   type RejectedLaunch,
   type ResolvedLaunch,
 } from './resolve-launch.ts'
-export { DEFAULT_WEB_PORT, portInUse, runCoperaCode, type CoperaCodeRuntime } from './run.ts'
+export { DEFAULT_WEB_PORT, portInUse, runCoperaCode, webServerConfigured, type CoperaCodeRuntime } from './run.ts'

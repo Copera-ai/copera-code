@@ -2,7 +2,9 @@
 # patch replaces the preset row's whole `config`, and the Loader has no patch
 # operation inside a preset's `config.plugins`, so this file copies the shipped
 # declaration and changes only the Copera Code persona, the summarization route
-# of `compaction-basic`, and `search: false` on `tool-web`, and drops the
+# of `compaction-basic`, and `search: false` on `tool-web`, drops the
+# `dsh-doc` skill directory from `skill-filesystem` (it documents developing the
+# harness itself), and drops the
 # `tool-plugin-manager` row so the agent cannot install bundles.
 # `tests/patch-ids.spec.ts` fails when the shipped declaration changes.
 - id: preset-standard
@@ -42,9 +44,6 @@
         name: '@deepseek-ai/dsh-tool-schedule'
       - id: skill-filesystem
         name: '@deepseek-ai/dsh-skill-filesystem'
-        config:
-          customSkillDirs:
-            - !!js process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('@deepseek-ai/dsh-agent-preset/package.json')), 'skills')
       - id: tool-skill
         name: '@deepseek-ai/dsh-tool-skill'
       - id: command-goal

@@ -19,7 +19,7 @@ $failures = [Collections.Generic.List[string]]::new()
 try {
     if (-not $MutexName -or $MutexName -eq 'default') {
         $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-        $MutexName = 'Global\DeepSeekHarness.Command.' + $sid
+        $MutexName = 'Global\CoperaCode.Command.' + $sid # COPERA: the mutex command-path.ps1 takes.
     }
     $options = @{ EnvironmentKey=$EnvironmentKey; OwnerKey=$OwnerKey; MachinePath=''; MutexName=$MutexName }
     $command = Join-Path $Directory 'resources\runtime\cli\bin'

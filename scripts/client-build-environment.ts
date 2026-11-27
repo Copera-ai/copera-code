@@ -156,6 +156,24 @@ export function officialClientBuildEnvironment(
   }
 }
 
+// COPERA: the Copera Code counterpart of officialClientBuildEnvironment, required by the Desktop packing stages.
+/**
+ * Resolve the exact public values required by a Copera Code build at one commit.
+ * @param root - repository root whose HEAD must match the built source.
+ * @param environment - optional explicit commit source for non-Git build environments.
+ * @returns complete `copera` client environment.
+ */
+export function coperaClientBuildEnvironment(
+  root: string,
+  environment: NodeJS.ProcessEnv = process.env,
+): Readonly<Record<`DSH_CLIENT_${string}`, string>> {
+  return {
+    DSH_CLIENT_COMMIT_HASH: repositoryCommitHash(root, environment),
+    DSH_CLIENT_VERSION: repositoryVersion(root),
+    ...COPERA_CLIENT_BUILD_ENVIRONMENT,
+  }
+}
+
 /** Digest of every client artifact produced by the complete root build. */
 interface ClientArtifactDigest {
   /** Number of files covered by the digest. */

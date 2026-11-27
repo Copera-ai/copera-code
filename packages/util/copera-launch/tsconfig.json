@@ -13,6 +13,9 @@
     },
     {
       "path": "../../../apps/cli"
+    },
+    {
+      "path": "../../boot/app-boot"
     }
   ]
 }

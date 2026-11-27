@@ -33,7 +33,7 @@ import { runCoperaCode } from '@deepseek-ai/dsh-copera-launch'
 await runCoperaCode()
 ```
 
-The published `@copera.ai/code` package calls `runCoperaCode({ productVersion })` from its `copera-code` bin with its own package version. In the repository, `pnpm copera-code --no-open` runs the same launcher from source with the version of `scripts/copera/npm-package.template.json`. `copera-code --version` prints that version followed by the harness version, for example `0.1.0 (harness 0.2.3-alpha.2)`. `copera-code` and `copera-code web` start the Web application; `--port`, `--host`, `--no-open`, `--help`, and `--version` pass through. `headless`, `acp`, `sdk`, `sdk-minimal`, `desktop`, `plugin`, any other positional argument, `--profile`, `--patch`, `--from-default-profile`, and the config dumps print an error and exit with code 1. When no `--port` is given and port 3080 is busy, the launcher adds `--port 0`.
+The published `@copera.ai/code` package calls `runCoperaCode({ productVersion })` from its `copera-code` bin with its own package version. In the repository, `pnpm copera-code --no-open` runs the same launcher from source with the version of `scripts/copera/npm-package.template.json`. `copera-code --version` prints that version followed by the harness version, for example `0.1.0 (harness 0.2.3-alpha.2)`. `copera-code` and `copera-code web` start the Web application. The accepted options are an allowlist for local use, each also in `--name=value` form: `-h`/`--help`, `-V`/`--version`, `--port <0-65535>`, `--host <127.0.0.1|::1|localhost>`, and `--no-open`. With an information option, only the first one is passed on, so `copera-code --no-open --version` prints the version. `headless`, `acp`, `sdk`, `sdk-minimal`, `desktop`, `plugin`, any other positional argument, `--profile`, `--patch`, `--from-default-profile`, the config dumps, `--public-url`, `--trusted-host`, `--tls-cert`, `--tls-key`, a non-loopback `--host`, and any other option print an error that never repeats the value and exit with code 1. When no `--port` is given, no `cordis.patch.yml` under the data home targets the `webserver` row, and port 3080 is busy, the launcher adds `--port 0`. The launcher also sets `DSH_COPERA_PRODUCT_VERSION` to the product version, which the `copera` route names in its `User-Agent`.
 
 ### Resolve the environment
 
@@ -47,10 +47,10 @@ const overlay = resolveProductEnv(process.env, homedir())
 
 | Variable set | Source |
 |---|---|
-| `DSH_HOME` | `COPERA_CODE_HOME`, else `~/.copera-code`; an inherited `DSH_HOME` is ignored |
+| `DSH_HOME` | `COPERA_CODE_HOME` trimmed, with a leading `~` expanded and made absolute; else `~/.copera-code`; an inherited `DSH_HOME` is ignored |
 | `DSH_TELEMETRY_DISABLED` | always `1` |
 | `DSH_COPERA_TOKEN` | `COPERA_CODE_TOKEN`, else deleted |
-| `DSH_COPERA_API_ORIGIN` | `COPERA_CODE_API_ORIGIN` when it is an `https:` URL, else deleted; any other value is an error |
+| `DSH_COPERA_API_ORIGIN` | `COPERA_CODE_API_ORIGIN` when it is a bare `https:` origin, or `http:` on `127.0.0.1` or `[::1]`, without credentials, path, query, or fragment, else deleted; any other value is an error that does not repeat it |
 
 Apply the overlay before the harness loads any `.env` file: the harness protects only `DSH_*` names from a project's `.env`, so a cloned repository cannot redirect tokens by setting `COPERA_CODE_*` or by leaving a `DSH_COPERA_*` value in the inherited environment.
 
@@ -68,7 +68,7 @@ Apply the overlay before the harness loads any `.env` file: the harness protects
 | [`src/run.ts`](src/run.ts) | `runCoperaCode`: applies the launch to `process.argv` and `process.env`, probes port 3080, and calls `runCli({ binName: 'copera-code' })` |
 | [`src/index.ts`](src/index.ts) | Public exports |
 
-The argument check skips the values of the Web options `--host`, `--port`, `--public-url`, `--tls-cert`, `--tls-key`, and the variadic `--trusted-host`, so an option value is not taken for a positional. With `binName: 'copera-code'`, the dsh CLI prints the Copera Code help for `-h` and `--help` instead of the Web application's help. The npm package is generated at pack time by `scripts/copera/pack-npm.ts` and checked by `scripts/copera/verify-pack.ts`; it does not live in the workspace.
+The argument check reads the values of `--host` and `--port`, so an option value is not taken for a positional. With `binName: 'copera-code'`, the dsh CLI prints the Copera Code help for `-h` and `--help` instead of the Web application's help. The npm package is generated at pack time by `scripts/copera/pack-npm.ts` and checked by `scripts/copera/verify-pack.ts`; it does not live in the workspace.
 
 </details>
 
@@ -104,7 +104,7 @@ None; the launcher runs before any model request.
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **Port fallback probes only 3080** — a profile that configures another port is not probed; the Web application reports a busy configured port itself.
+- **Port fallback probes only 3080** — a profile that configures another port is not probed; the Web application reports a busy configured port itself. A configured port is detected as a `webserver` row patch in the data-home or `copera` profile `cordis.patch.yml`.
 
 <a id="dev-note"></a>
 ### Dev Note

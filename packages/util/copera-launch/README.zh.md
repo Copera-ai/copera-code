@@ -33,7 +33,7 @@ import { runCoperaCode } from '@deepseek-ai/dsh-copera-launch'
 await runCoperaCode()
 ```
 
-发布的 `@copera.ai/code` 包从其 `copera-code` bin 以自身包版本调用 `runCoperaCode({ productVersion })`。在仓库中，`pnpm copera-code --no-open` 以 `scripts/copera/npm-package.template.json` 的版本从源码运行同一个启动器。`copera-code --version` 打印该版本，后接 harness 版本，例如 `0.1.0 (harness 0.2.3-alpha.2)`。`copera-code` 与 `copera-code web` 启动 Web 应用；`--port`、`--host`、`--no-open`、`--help` 与 `--version` 原样传递。`headless`、`acp`、`sdk`、`sdk-minimal`、`desktop`、`plugin`、任何其他位置参数、`--profile`、`--patch`、`--from-default-profile` 以及配置转储会打印错误并以退出码 1 结束。未给出 `--port` 且 3080 端口被占用时，启动器追加 `--port 0`。
+发布的 `@copera.ai/code` 包从其 `copera-code` bin 以自身包版本调用 `runCoperaCode({ productVersion })`。在仓库中，`pnpm copera-code --no-open` 以 `scripts/copera/npm-package.template.json` 的版本从源码运行同一个启动器。`copera-code --version` 打印该版本，后接 harness 版本，例如 `0.1.0 (harness 0.2.3-alpha.2)`。`copera-code` 与 `copera-code web` 启动 Web 应用。可接受的选项是面向本机使用的允许列表，每个也接受 `--name=value` 形式：`-h`/`--help`、`-V`/`--version`、`--port <0-65535>`、`--host <127.0.0.1|::1|localhost>` 与 `--no-open`。出现信息类选项时只传递第一个，因此 `copera-code --no-open --version` 会打印版本。`headless`、`acp`、`sdk`、`sdk-minimal`、`desktop`、`plugin`、任何其他位置参数、`--profile`、`--patch`、`--from-default-profile`、配置转储、`--public-url`、`--trusted-host`、`--tls-cert`、`--tls-key`、非回环地址的 `--host` 以及其他任何选项都会打印不重复其取值的错误并以退出码 1 结束。未给出 `--port`、数据目录下没有任何 `cordis.patch.yml` 针对 `webserver` 条目且 3080 端口被占用时，启动器追加 `--port 0`。启动器还把 `DSH_COPERA_PRODUCT_VERSION` 设为产品版本，`copera` 路由在其 `User-Agent` 中使用该版本。
 
 ### 解析环境
 
@@ -47,10 +47,10 @@ const overlay = resolveProductEnv(process.env, homedir())
 
 | 设置的变量 | 来源 |
 |---|---|
-| `DSH_HOME` | `COPERA_CODE_HOME`，否则为 `~/.copera-code`；忽略继承的 `DSH_HOME` |
+| `DSH_HOME` | 去除首尾空白、展开开头的 `~` 并转为绝对路径后的 `COPERA_CODE_HOME`；否则为 `~/.copera-code`；忽略继承的 `DSH_HOME` |
 | `DSH_TELEMETRY_DISABLED` | 始终为 `1` |
 | `DSH_COPERA_TOKEN` | `COPERA_CODE_TOKEN`，否则删除 |
-| `DSH_COPERA_API_ORIGIN` | `COPERA_CODE_API_ORIGIN` 为 `https:` URL 时取其值，否则删除；其他取值报错 |
+| `DSH_COPERA_API_ORIGIN` | `COPERA_CODE_API_ORIGIN` 为不含凭据、路径、查询与片段的 `https:` 源（或 `127.0.0.1`、`[::1]` 上的 `http:` 源）时取其值，否则删除；其他取值报错且不重复该值 |
 
 在 harness 加载任何 `.env` 文件之前应用该覆盖：harness 只保护 `DSH_*` 名称不被项目的 `.env` 覆盖，因此克隆来的仓库无法通过设置 `COPERA_CODE_*` 或在继承环境中留下 `DSH_COPERA_*` 值来转移 token。
 
@@ -68,7 +68,7 @@ const overlay = resolveProductEnv(process.env, homedir())
 | [`src/run.ts`](src/run.ts) | `runCoperaCode`：把启动结果应用到 `process.argv` 与 `process.env`，探测 3080 端口，并调用 `runCli({ binName: 'copera-code' })` |
 | [`src/index.ts`](src/index.ts) | 公开导出 |
 
-参数检查会跳过 Web 选项 `--host`、`--port`、`--public-url`、`--tls-cert`、`--tls-key` 以及可变参数 `--trusted-host` 的取值，因此选项值不会被当作位置参数。使用 `binName: 'copera-code'` 时，dsh CLI 对 `-h` 与 `--help` 打印 Copera Code 帮助，而不是 Web 应用的帮助。npm 包在打包时由 `scripts/copera/pack-npm.ts` 生成并由 `scripts/copera/verify-pack.ts` 检查；它不在工作区中。
+参数检查会读取 `--host` 与 `--port` 的取值，因此选项值不会被当作位置参数。使用 `binName: 'copera-code'` 时，dsh CLI 对 `-h` 与 `--help` 打印 Copera Code 帮助，而不是 Web 应用的帮助。npm 包在打包时由 `scripts/copera/pack-npm.ts` 生成并由 `scripts/copera/verify-pack.ts` 检查；它不在工作区中。
 
 </details>
 
@@ -104,7 +104,7 @@ const overlay = resolveProductEnv(process.env, homedir())
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **端口回退只探测 3080** — 配置了其他端口的 profile 不会被探测；被占用的已配置端口由 Web 应用自行报告。
+- **端口回退只探测 3080** — 配置了其他端口的 profile 不会被探测；被占用的已配置端口由 Web 应用自行报告。已配置的端口通过数据目录或 `copera` profile 的 `cordis.patch.yml` 中针对 `webserver` 条目的 patch 来识别。
 
 <a id="dev-note"></a>
 ### 开发备注

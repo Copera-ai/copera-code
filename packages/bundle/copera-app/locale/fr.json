@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Verrou de produit Copera Code",
+    "description": "Empêche le démarrage lorsqu'une couche de patch ultérieure réactive une ligne que Copera Code garde désactivée, enregistre une autre route de modèle ou retire le paquet Copera Code."
+  }
+}

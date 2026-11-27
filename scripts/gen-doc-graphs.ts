@@ -568,6 +568,15 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'The Host owns the Copera browser sign-in and the stored grant; Clients receive state without tokens through the coperaAccount Remote namespace.',
   },
   {
+    key: 'coperaProductLock',
+    pkg: 'copera-app',
+    title: 'Copera Code product lock',
+    mode: 'service',
+    implementations: [],
+    consumers: [],
+    note: 'Present only while the composed copera profile keeps its locked rows off and registers no model route but copera; the copera-app patch makes the required webserver row inject it.',
+  },
+  {
     key: 'coperaTokens',
     pkg: 'llm-copera',
     title: 'Copera access tokens',

@@ -216,6 +216,14 @@ register<View extends AnyConnectorAccountView>(registration: ConnectorAccountReg
 
 Source: [`packages/client/ui-connector-account/src/index.ts`](../../packages/client/ui-connector-account/src/index.ts)
 
+<a id="ctxcoperaproductlock--coperaproductlock"></a>
+
+### `ctx.coperaProductLock` — `CoperaProductLock`
+
+The service value the guard provides while the lock holds.
+
+Source: [`packages/bundle/copera-app/src/index.ts`](../../packages/bundle/copera-app/src/index.ts)
+
 <a id="ctxheadlessstartup--headlessstartupvalues"></a>
 
 ### `ctx.headlessStartup` — `HeadlessStartupValues`

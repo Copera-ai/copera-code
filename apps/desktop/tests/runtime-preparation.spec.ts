@@ -76,7 +76,7 @@ afterEach(async () => {
   await rm(state.root, { recursive: true, force: true, maxRetries: 20, retryDelay: 50 })
 })
 
-it.each(['mac-arm64', 'mac-x64', 'win-x64'] as const)('prepares %s with one pnpm distribution and its CLI resources', async (target) => {
+it.each(['mac-arm64', 'mac-x64', 'win-x64'] as const)('prepares %s with one pnpm distribution and no terminal command', async (target) => {
   state.target = target
   const windows = target === 'win-x64'
   if (windows) process.argv.push('--defer-primary-runtime-smoke')
@@ -86,21 +86,18 @@ it.each(['mac-arm64', 'mac-x64', 'win-x64'] as const)('prepares %s with one pnpm
   expect(existsSync(join(runtime, 'pnpm'))).toBe(false)
   expect(existsSync(join(runtime, 'primary-runtime', 'dependencies', 'pnpm', 'bin', 'pnpm.mjs'))).toBe(true)
   expect(existsSync(join(runtime, 'bin', 'node'))).toBe(true)
-  expect(existsSync(join(runtime, 'cli', 'bin', windows ? 'dsh.cmd' : 'dsh'))).toBe(true)
-  expect(readFileSync(join(runtime, 'cli', 'command-manager.js'), 'utf8')).toBe('command manager fixture')
-  expect(existsSync(join(runtime, 'cli', 'command-path.ps1'))).toBe(true)
+  // COPERA: Copera Code ships no terminal command; the upstream `dsh` launcher directory is not prepared.
+  expect(existsSync(join(runtime, 'cli'))).toBe(false)
   expect(JSON.parse(readFileSync(join(runtime, 'versions.json'), 'utf8'))).toEqual({
     schemaVersion: 1, node: '24.18.1', pnpm: '11.7.0',
   })
   expect(state.preparePrimary).toHaveBeenCalledWith({ deferSmoke: windows })
-  if (windows) expect(state.commandLink).not.toHaveBeenCalled()
-  else expect(state.commandLink).toHaveBeenCalledWith(join(runtime, 'cli'), target === 'mac-arm64' ? 'arm64' : 'x64', '12.0')
+  expect(state.commandLink).not.toHaveBeenCalled()
 })
 
 it.each([
   ['electron', 'Electron extraction failed'],
   ['primary', 'primary preparation failed'],
-  ['cli', 'command manager copy failed'],
 ] as const)('does not publish versions when %s preparation fails', async (failure, error) => {
   state.failure = failure
   const runtime = join(state.root, 'runtime')
@@ -148,7 +145,7 @@ it.each(['electron', 'primary'] as const)('overlaps Windows payloads and waits f
     expect(existsSync(join(state.root, 'runtime', 'versions.json'))).toBe(false)
     ;(last === 'electron' ? electron : primary).resolve(undefined)
     expect(await outcome).toBeUndefined()
-    expect(existsSync(join(state.root, 'runtime', 'cli', 'command-manager.js'))).toBe(true)
+    expect(existsSync(join(state.root, 'runtime', 'bin', 'node'))).toBe(true) // COPERA: no runtime/cli.
     expect(existsSync(join(state.root, 'runtime', 'versions.json'))).toBe(true)
   } finally {
     electron.resolve(undefined)

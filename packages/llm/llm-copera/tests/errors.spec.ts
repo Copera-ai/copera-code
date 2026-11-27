@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mapShikaiError } from '../src/errors.ts'
+import { mapShikaiError, shikaiFailure } from '../src/errors.ts'
 
 const envelope = (code: string, type = code) => ({ error: { message: 'm', type, code } })
 
@@ -43,6 +43,15 @@ describe('mapShikaiError', () => {
       .toEqual({ kind: 'UPSTREAM', retryable: true, messageKey: 'copera.error.upstream' })
     expect(mapShikaiError(400, 'not json', new Headers()))
       .toEqual({ kind: 'UPSTREAM', retryable: false, messageKey: 'copera.error.upstream' })
+  })
+
+  it('classifies a server failure with x-should-retry: false as non-retryable and reports a non-retryable code', () => {
+    const headers = new Headers({ 'x-should-retry': 'false' })
+    expect(mapShikaiError(503, envelope('shikai_unavailable', 'server_error'), headers))
+      .toEqual({ kind: 'UPSTREAM', retryable: false, messageKey: 'copera.error.upstream' })
+    const failure = shikaiFailure({ status: 503, inStream: false, headers, body: envelope('shikai_unavailable', 'server_error') },
+      { code: 'SERVER', message: 'pi-ai' })
+    expect(failure.code).toBe('HTTP_503')
   })
 
   it('classifies an in-stream error event by its envelope alone', () => {

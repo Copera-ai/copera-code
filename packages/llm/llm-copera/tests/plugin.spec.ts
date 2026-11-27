@@ -3,7 +3,7 @@ import { Context, Service } from '@deepseek-ai/cordis'
 import LlmRuntime from '@deepseek-ai/dsh-llm'
 import * as LlmCopera from '@deepseek-ai/dsh-llm-copera'
 import type { CoperaTokenSource } from '@deepseek-ai/dsh-llm-copera'
-import { coperaBaseUrl, COPERA_ROUTE_ID } from '../src/config.ts'
+import { coperaBaseUrl, COPERA_ROUTE_ID, coperaUserAgent } from '../src/config.ts'
 
 /** Signed-out `coperaTokens` provider; the plugin must never call it while mounting. */
 class SignedOutTokens extends Service implements CoperaTokenSource {
@@ -52,6 +52,14 @@ describe('coperaBaseUrl', () => {
   it('refuses an origin that carries a path, query, or credentials', () => {
     expect(() => coperaBaseUrl({ DSH_COPERA_API_ORIGIN: 'https://api.copera.ai/other' })).toThrow(/origin/)
     expect(() => coperaBaseUrl({ DSH_COPERA_API_ORIGIN: 'https://user:pw@api.copera.ai' })).toThrow(/origin/)
+  })
+})
+
+describe('coperaUserAgent', () => {
+  it('names the product version the launcher passes, and unknown otherwise', () => {
+    expect(coperaUserAgent('0.1.0')).toBe('copera-code/0.1.0 (+https://github.com/Copera-ai/copera-code)')
+    expect(coperaUserAgent(undefined)).toBe('copera-code/unknown (+https://github.com/Copera-ai/copera-code)')
+    expect(coperaUserAgent('1.0 (evil)')).toBe('copera-code/unknown (+https://github.com/Copera-ai/copera-code)')
   })
 })
 

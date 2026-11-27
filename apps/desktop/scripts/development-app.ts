@@ -54,6 +54,16 @@ export function prepareDevelopmentApp(options: DevelopmentAppOptions): string {
   return executable
 }
 
+// COPERA: the main process maps COPERA_CODE_HOME to DSH_HOME and discards an inherited DSH_HOME.
+/**
+ * Environment that points the development app at its isolated data home.
+ * @param home - Development data home.
+ * @returns the product variable the main process reads the data home from.
+ */
+export function developmentHomeEnvironment(home: string): { COPERA_CODE_HOME: string } {
+  return { COPERA_CODE_HOME: home }
+}
+
 /**
  * Create the development executable used by both the CLI and Launch Services.
  * @param options - Persisted development locations and debugging settings.
@@ -62,7 +72,7 @@ export function prepareDevelopmentApp(options: DevelopmentAppOptions): string {
  */
 export function developmentLauncher(options: DevelopmentAppOptions, bundle: string): string {
   const environment = {
-    DSH_HOME: options.home,
+    ...developmentHomeEnvironment(options.home),
     DSH_DESKTOP_DEV_APP: '1',
     DSH_DESKTOP_HOST_INSPECT_PORT: String(options.hostPort),
     DSH_DESKTOP_OPEN_DEVTOOLS: options.openDevtools,

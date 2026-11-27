@@ -100,6 +100,7 @@ export const SERVICE_PAGE: Record<string, string> = {
   // COPERA: Copera account service and the token source it provides to llm-copera.
   coperaAccount: 'account.md',
   coperaTokens: 'account.md',
+  coperaProductLock: 'boot.md',
   credentials: 'credentials.md',
   credentialsController: 'credentials.md',
   settingsController: 'settings.md',

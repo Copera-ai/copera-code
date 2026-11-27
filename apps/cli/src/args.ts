@@ -117,8 +117,8 @@ const PRODUCT_HELP: Readonly<Record<string, ProductHelp>> = {
 Options:
   --port <port>           listen port; 3080 by default, or a free port when 3080
                           is busy; pass 0 to let the OS pick one
-  --host <host>           bind address: one IPv4 or IPv6 literal of a local
-                          interface
+  --host <host>           loopback bind address: 127.0.0.1 (default), ::1, or
+                          localhost
   --no-open               do not open Copera Code in the default browser
   -V, --version           output the version number
   -h, --help              show this help

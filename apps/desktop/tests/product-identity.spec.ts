@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { DESKTOP_UPDATES_DEFAULT, desktopUpdatesEnabled, productIdentity } from '../scripts/product-identity.mjs'
 import { createElectronBuilderConfig } from '../scripts/electron-builder-config.mjs'
+import { de, en, es, fr, ja, pt, ru, zh } from '../src/locale.ts'
 import {
   loadDesktopPackageEnvironment, localMacOSPackageEnvironment, validateDesktopPackageEnvironment,
 } from '../scripts/desktop-package-environment.mjs'
@@ -38,6 +39,25 @@ describe('Copera Code Desktop identity', () => {
     expect(JSON.stringify(config.mac.extendInfo)).not.toContain('DeepSeek')
   })
 
+  it.each([['darwin', 'arm64'], ['win32', 'x64']] as const)('ships the licence, the notices, and the Inter licence on %s', (platform, arch) => {
+    const config = createElectronBuilderConfig({
+      DSH_DESKTOP_TARGET_PLATFORM: platform, DSH_DESKTOP_TARGET_ARCH: arch, DSH_DESKTOP_UNSIGNED: '1',
+    }, platform, arch)
+    const resources: ReadonlyArray<{ readonly from: string; readonly to: string }> = config.extraResources
+    for (const to of ['LICENSE', 'THIRD_PARTY_NOTICES.md', 'OFL-Inter.txt']) {
+      const resource = resources.find(entry => entry.to === to)
+      expect(resource, to).toBeDefined()
+      expect(statSync(resource!.from).isFile(), to).toBe(true)
+    }
+    const inter = readFileSync(resources.find(entry => entry.to === 'OFL-Inter.txt')!.from, 'utf8')
+    expect(inter.startsWith('Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)\n')).toBe(true)
+  })
+
+  it.each(Object.entries({ en, zh, ja, es, fr, de, ru, pt }))('names Copera Code in the %s address-in-use dialog', (_locale, messages) => {
+    expect(messages.startupAddressInUse).toContain(productIdentity.productName)
+    expect(messages.startupAddressInUse).not.toMatch(/\bDSH\b|\bdsh\b/u)
+  })
+
   it('gives unsigned local macOS packaging the product application ID', () => {
     expect(localMacOSPackageEnvironment({ DSH_DESKTOP_APP_ID: 'com.example.other', PATH: '/bin' }))
       .toMatchObject({ DSH_DESKTOP_APP_ID: productIdentity.appId, DSH_DESKTOP_UNSIGNED: '1', PATH: '/bin' })
@@ -52,7 +72,7 @@ describe('Copera Code Desktop identity', () => {
         if (statSync(path).isDirectory()) { visit(path); continue }
         if (/\.(?:png|ico|icns|bmp|woff2?)$/u.test(entry)) continue
         const text = readFileSync(path, 'utf8')
-        for (const pattern of ['DeepSeek Harness', 'com.deepseek.harness', '/usr/local/bin/dsh', 'deepseek-harness-']) {
+        for (const pattern of ['DeepSeek Harness', 'DeepSeekHarness', 'com.deepseek.harness', '/usr/local/bin/dsh', 'deepseek-harness-']) {
           if (text.includes(pattern)) offending.push(`${join(directory, entry).slice(root.pathname.length)}: ${pattern}`)
         }
       }
@@ -68,6 +88,17 @@ describe('Copera Code Desktop identity', () => {
     expect(read('cli/dsh')).toContain(`/MacOS/${productIdentity.productName}"`)
     expect(read('cli/dsh.cmd')).toContain(`\\${productIdentity.productName}.exe"`)
     expect(read('scripts/uninstall-registration.ps1')).toContain(`'${productIdentity.productName}.exe'`)
+  })
+
+  it('uses one command-registration mutex and owner key in the installer worker and the uninstaller', () => {
+    const read = (path: string): string => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
+    const mutexes = (text: string): string[] => [...text.matchAll(/'(Global\\[^']+\.)'\s*\+\s*\$sid/gu)].map(match => match[1]!)
+    const worker = mutexes(read('scripts/command-path.ps1'))
+    const uninstaller = mutexes(read('scripts/uninstall-registration.ps1'))
+    expect(worker).toEqual(['Global\\CoperaCode.Command.'])
+    expect(uninstaller).toEqual(worker)
+    expect(read('scripts/command-path.ps1')).toContain('-OwnerKey \'Software\\CoperaCode\\Command\'')
+    expect(read('installer/uninstall.nsh')).toContain('"Software\\CoperaCode\\Command"')
   })
 })
 

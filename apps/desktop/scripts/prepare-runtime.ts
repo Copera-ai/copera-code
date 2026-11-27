@@ -11,8 +11,6 @@ import { readPrimaryRuntime } from '../../../packages/skill/tool-workspace-depen
 import { desktopTargetPlatform, resolveDesktopBuildTarget, resolveDesktopTargetBuildPaths } from './desktop-build-paths.mjs'
 import { packagingStep } from './packaging-step.mjs'
 import { preparePrimaryRuntime } from './prepare-primary-runtime.ts'
-import { prepareDesktopCli } from './prepare-cli.ts'
-import { prepareCommandLink } from './prepare-command-link.ts'
 
 const BUILD_PATHS = resolveDesktopTargetBuildPaths()
 const RUNTIME_ROOT = BUILD_PATHS.runtime
@@ -33,19 +31,11 @@ async function prepareElectron({ platform, arch }: DesktopTarget): Promise<strin
   }).trim()
 }
 
-function prepareCli({ platform, arch }: DesktopTarget): void {
+// COPERA: Copera Code ships no terminal command, so `runtime/cli` (the upstream `dsh` launchers, the macOS
+// command-link helper, and the command manager) is not prepared; only the bundled `node` shim in `runtime/bin` is.
+function prepareCli(): void {
   cpSync(join(import.meta.dirname, 'node-bin'), join(RUNTIME_ROOT, 'bin'), { recursive: true })
   chmodSync(join(RUNTIME_ROOT, 'bin', 'node'), 0o755)
-  const cli = join(RUNTIME_ROOT, 'cli')
-  prepareDesktopCli(cli, platform)
-  if (platform === 'darwin') {
-    const minimumVersion = execFileSync('/usr/libexec/PlistBuddy', [
-      '-c', 'Print LSMinimumSystemVersion', join(BUILD_PATHS.electron, 'Electron.app', 'Contents', 'Info.plist'),
-    ], { encoding: 'utf8' }).trim()
-    prepareCommandLink(cli, arch, minimumVersion)
-  }
-  cpSync(join(import.meta.dirname, '..', 'lib', 'command-manager-entry.js'), join(cli, 'command-manager.js'))
-  cpSync(join(import.meta.dirname, 'command-path.ps1'), join(cli, 'command-path.ps1'))
 }
 
 async function main(): Promise<void> {
@@ -67,7 +57,7 @@ async function main(): Promise<void> {
   }
   const { pnpm } = await readPrimaryRuntime(join(RUNTIME_ROOT, 'primary-runtime'))
   if (pnpm === undefined) throw new Error('desktop runtime: primary-runtime manifest has no pnpm version')
-  await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:cli', async () => { prepareCli(target) })
+  await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'prepare:cli', async () => { prepareCli() })
   writeFileSync(join(RUNTIME_ROOT, 'versions.json'), `${JSON.stringify({
     schemaVersion: 1,
     node: nodeVersion,

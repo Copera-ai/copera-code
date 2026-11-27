@@ -82,7 +82,46 @@
 - id: upstream-skills
   disabled: true
 
+# ── plugin installation, recommendations, and feedback ─────────────────────
+
+# Plugin Manager installs and enables npm, git, and local bundles over its
+# Remote namespace; its only enabled consumer was creation-recommendations,
+# whose generated pages need that installation path.
+- id: plugin-manager
+  disabled: true
+
 - id: ui-plugin-manager
+  disabled: true
+
+# The model-invocable `official-plugins` skill and its one-click enable card.
+- id: plugin-recommendations
+  disabled: true
+
+- id: client-ui-plugin-recommendations
+  disabled: true
+
+# Personalized pages are generated bundles installed through Plugin Manager.
+- id: creation-recommendations
+  disabled: true
+
+- id: client-ui-creation-recommendations
+  disabled: true
+
+# The recommendation card host and its Settings switch have no card kinds left.
+- id: action-cards
+  disabled: true
+
+- id: client-ui-action-cards
+  disabled: true
+
+# Session remarks and message ratings reach only the switched-off upload path.
+- id: message-feedback
+  disabled: true
+
+- id: command-feedback
+  disabled: true
+
+- id: ui-message-feedback
   disabled: true
 
 - id: entry-customization
@@ -115,12 +154,10 @@
     provider: copera
     model: shikai-ultra-fast
 
-# No npmmirror fallback registry and one npm file CDN for plugin details.
-- id: plugin-manager
+# Agent web fetches identify as Copera Code; the other fields keep their defaults.
+- id: web-fetch-http
   config:
-    fallbackRegistries: []
-    detailNpmFileSources:
-      - jsdelivr
+    userAgent: !!js "'copera-code/' + (process.env.DSH_COPERA_PRODUCT_VERSION || 'unknown') + ' (+https://github.com/Copera-ai/copera-code)'"
 
 - id: ui-theme
   config:
@@ -138,6 +175,20 @@
     languages: [en, pt]
     labels:
       pt: Português (Brasil)
+
+# ── product lock ───────────────────────────────────────────────────────────
+
+# The guard checks the composed tree after every patch layer: the rows above
+# stay off (src/product-lock.ts lists them), only the `copera` model route is
+# registered, and the profile still lists this bundle. The required Web server
+# injects the guard's service, so a violation, or a disabled guard, stops
+# startup with the guard's message.
+- insert:
+    - id: copera-product-lock
+      name: '@deepseek-ai/dsh-copera-app'
+
+- id: webserver
+  inject: [webStartup, coperaProductLock]
 
 # ── Copera account and model route ──────────────────────────────────────────
 

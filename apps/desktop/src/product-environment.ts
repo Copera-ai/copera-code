@@ -21,7 +21,7 @@ function assign(env: NodeJS.ProcessEnv, product: Record<string, string | undefin
  * `DSH_COPERA_API_ORIGIN` are copied from `COPERA_CODE_TOKEN` and `COPERA_CODE_API_ORIGIN` or deleted.
  * @param env - Environment changed in place; the main process passes `process.env`, which the Host inherits.
  * @param homedir - Operating-system home directory.
- * @throws Error when `COPERA_CODE_API_ORIGIN` is not an `https:` URL; the data home and telemetry switch are
+ * @throws Error when `COPERA_CODE_API_ORIGIN` is not a bare `https:` origin; the data home and telemetry switch are
  *   already applied and `DSH_COPERA_API_ORIGIN` is deleted, so no later path or child reaches another home.
  */
 export function applyDesktopProductEnvironment(env: NodeJS.ProcessEnv, homedir: string): void {
@@ -33,4 +33,23 @@ export function applyDesktopProductEnvironment(env: NodeJS.ProcessEnv, homedir: 
     throw error
   }
   assign(env, product)
+}
+
+/**
+ * Re-apply the token and origin mapping to the environment the Host inherits after the login-shell merge.
+ * Dock and Finder launches start from launchd's environment, so `COPERA_CODE_TOKEN` and `COPERA_CODE_API_ORIGIN`
+ * exported in a shell profile arrive only through the merge. The merge never copies `DSH_*` names from the shell,
+ * and this mapping replaces every product `DSH_*` value, so only `COPERA_CODE_*` values are trusted. The data home
+ * stays the one resolved at startup, because Desktop paths are already resolved against it.
+ * @param env - Merged Host environment; not modified.
+ * @param dataHome - `DSH_HOME` resolved at startup.
+ * @returns A new environment with `DSH_HOME`, `DSH_TELEMETRY_DISABLED`, `DSH_COPERA_TOKEN`, and
+ *   `DSH_COPERA_API_ORIGIN` replaced.
+ * @throws Error when the merged `COPERA_CODE_API_ORIGIN` is not a bare `https:` origin; the message never contains
+ *   the value.
+ */
+export function applyHostProductEnvironment(env: NodeJS.ProcessEnv, dataHome: string): NodeJS.ProcessEnv {
+  const host = { ...env }
+  assign(host, resolveProductEnv({ ...env, COPERA_CODE_HOME: dataHome }, dataHome))
+  return host
 }

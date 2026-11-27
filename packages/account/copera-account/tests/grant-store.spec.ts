@@ -180,3 +180,30 @@ it('keeps the record on a server error', async () => {
   await expect(f.store.refreshIfNeeded({ skewMs: 60_000 })).rejects.toThrow()
   expect((await f.store.read())?.refreshToken).toBe('refresh-0')
 })
+
+it.each([
+  ['network error', (f: Awaited<ReturnType<typeof fixture>>) => { f.server.override((_form, res) => { res.socket?.destroy(); return true }) }, {}],
+  ['timeout', (f: Awaited<ReturnType<typeof fixture>>) => { f.server.override(() => new Promise<boolean>(() => undefined)) }, { refreshTimeoutMs: 100 }],
+] as const)('keeps serving the unexpired access token when a refresh inside the skew window fails with a %s', async (_name, fail, options) => {
+  const f = await fixture(options)
+  await f.store.write(grant('0', Date.now() + 30_000))
+  fail(f)
+  expect((await f.store.refreshIfNeeded({ skewMs: 60_000 }))?.accessToken).toBe('access-0')
+  expect((await f.store.read())?.refreshToken).toBe('refresh-0')
+})
+
+it('still fails a transient refresh for an expired token or a rejected one', async () => {
+  const f = await fixture()
+  await f.store.write(grant('0', Date.now() + 30_000))
+  f.server.override((_form, res) => { res.socket?.destroy(); return true })
+  await expect(f.store.refreshIfNeeded({ skewMs: 60_000, rejectedToken: 'access-0' })).rejects.toThrow(/network/u)
+  await f.store.write(grant('1', expired()))
+  await expect(f.store.refreshIfNeeded({ skewMs: 60_000 })).rejects.toThrow(/network/u)
+})
+
+it('does not hide a server error behind the unexpired token', async () => {
+  const f = await fixture()
+  await f.store.write(grant('0', Date.now() + 30_000))
+  f.server.override((_form, res) => { res.writeHead(503).end(); return true })
+  await expect(f.store.refreshIfNeeded({ skewMs: 60_000 })).rejects.toThrow(/HTTP 503/u)
+})

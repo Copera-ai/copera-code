@@ -12,7 +12,14 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { pnpmInvocation } from '../pnpm-invocation.ts'
-import { releaseFamily, tarballName, type ReleaseFamily, type ReleaseMember } from './families.ts'
+import {
+  RELEASE_CLIENT_PROFILES,
+  releaseFamily,
+  tarballName,
+  type ReleaseClientProfile,
+  type ReleaseFamily,
+  type ReleaseMember,
+} from './families.ts'
 import { isEntry, runConcurrent } from './process.ts'
 import { PUBLISH_ORDER_FILE, packedManifest, tarballFiles } from './tarball.ts'
 
@@ -101,19 +108,53 @@ export async function packFamilyMembers(
   return packMembers(family, members, destination, concurrency)
 }
 
-/** Pack the family named by `--family` into `--out`. */
-async function main(): Promise<void> {
+// COPERA: `--client-profile` selects the client build profile the built artifacts must carry (default `official`).
+/** Parsed release pack command line. */
+export interface ReleasePackArguments {
+  readonly family: string
+  readonly out: string | undefined
+  readonly concurrency: number
+  readonly clientProfile: ReleaseClientProfile
+}
+
+/**
+ * Parse the release pack command line.
+ * @param argv - arguments after the script entry point.
+ * @returns the family, output, concurrency, and required client build profile.
+ */
+export function parseReleasePackArguments(argv: readonly string[]): ReleasePackArguments {
   const { values } = parseArgs({
-    options: { family: { type: 'string' }, out: { type: 'string' }, concurrency: { type: 'string' } },
+    args: [...argv],
+    options: {
+      family: { type: 'string' }, out: { type: 'string' }, concurrency: { type: 'string' }, 'client-profile': { type: 'string' },
+    },
     allowPositionals: false,
   })
-  if (values.family === undefined) throw new Error('usage: pack.ts --family <dsh|vendor> [--out dist/npm] [--concurrency 1]')
-  const concurrency = parsePackConcurrency(values.concurrency)
+  if (values.family === undefined) {
+    throw new Error('usage: pack.ts --family <dsh|vendor> [--out dist/npm] [--concurrency 1] [--client-profile official|copera]')
+  }
+  const requested = values['client-profile'] ?? 'official'
+  const clientProfile = RELEASE_CLIENT_PROFILES.find(profile => profile === requested)
+  if (clientProfile === undefined) {
+    throw new Error(`--client-profile must be one of ${RELEASE_CLIENT_PROFILES.join(', ')}; got ${JSON.stringify(requested)}`)
+  }
+  return {
+    family: values.family,
+    out: values.out,
+    concurrency: parsePackConcurrency(values.concurrency),
+    clientProfile,
+  }
+}
+
+/** Pack the family named by `--family` into `--out`. */
+async function main(): Promise<void> {
+  const values = parseReleasePackArguments(process.argv.slice(2))
+  const { concurrency } = values
 
   const family = releaseFamily(values.family)
   const root = process.cwd()
   const destination = resolve(root, values.out ?? DEFAULT_OUTPUT)
-  family.verifyBuildArtifacts(root)
+  family.verifyBuildArtifacts(root, values.clientProfile)
   const order = await packFamilyMembers(root, family, destination, concurrency)
   writeFileSync(join(destination, PUBLISH_ORDER_FILE), `${order.join('\n')}\n`)
 

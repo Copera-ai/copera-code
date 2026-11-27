@@ -9,7 +9,7 @@ import { DESKTOP_HOST_PROTOCOL_VERSION } from '../src/host-protocol.ts'
 import type { DesktopRelease } from '../src/release.ts'
 import { developmentRuntimeDirectory, resolveDesktopBuildTarget } from './desktop-build-paths.mjs'
 import { prepareDevelopmentProject } from './development-project.ts'
-import { prepareDevelopmentApp } from './development-app.ts'
+import { developmentHomeEnvironment, prepareDevelopmentApp } from './development-app.ts'
 import { prepareDevelopmentState } from './development-state.ts'
 import { preparePrimaryRuntime } from './prepare-primary-runtime.ts'
 
@@ -67,13 +67,13 @@ async function launchElectron(): Promise<void> {
   const { home, userData } = prepareDevelopmentState(APP_ROOT)
   const environment: NodeJS.ProcessEnv = {
     ...process.env,
-    DSH_HOME: home,
+    ...developmentHomeEnvironment(home), // COPERA: the main process reads the data home from COPERA_CODE_HOME.
     DSH_DESKTOP_PRIMARY_RUNTIME_DIR: process.env.DSH_DESKTOP_PRIMARY_RUNTIME_DIR ?? developmentRuntimeDirectory(),
     DSH_DESKTOP_HOST_INSPECT_PORT: String(hostPort),
     DSH_DESKTOP_OPEN_DEVTOOLS: process.env.DSH_DESKTOP_OPEN_DEVTOOLS ?? '1',
     ELECTRON_ENABLE_LOGGING: process.env.ELECTRON_ENABLE_LOGGING ?? '1',
   }
-  console.log(`desktop development: DSH_HOME=${home}`)
+  console.log(`desktop development: COPERA_CODE_HOME=${home}`) // COPERA
   console.log(`desktop development: userData=${userData}`)
   console.log(`desktop development: inspectors main=${String(mainPort)}, renderer=${String(rendererPort)}, host=${String(hostPort)}`)
   if (process.platform === 'darwin') {

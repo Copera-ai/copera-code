@@ -7,7 +7,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { credentialKey, type CredentialRecord } from '@deepseek-ai/dsh-credentials'
 import { z } from 'zod'
-import { GrantRevokedError, refreshGrant, type CoperaGrant } from './oauth.ts'
+import { CoperaOAuthError, GrantRevokedError, refreshGrant, type CoperaGrant } from './oauth.ts'
 
 /** Credential record key of the Copera grant. */
 export const GRANT_KEY = credentialKey('copera-account', 'default')
@@ -86,8 +86,10 @@ export class GrantStore {
    * access token. Concurrent callers in this process share one refresh; a caller in another process that already
    * replaced the token makes this call return the replacement without a request.
    * @param opts - token a server rejected, if any, and how early before expiry to refresh.
-   * @returns the current grant, or null when none is stored or Copera revoked it (the record is then removed).
-   * @throws CoperaOAuthError on network, timeout, or server failure; the record is kept for a later retry.
+   * @returns the current grant, or null when none is stored or Copera revoked it (the record is then removed). When an
+   *   early refresh of an unexpired, unrejected token fails on the network or times out, the current grant.
+   * @throws CoperaOAuthError on a server failure, or on a network failure or timeout once the token has expired or was
+   *   rejected; the record is kept for a later retry.
    */
   async refreshIfNeeded(opts: { rejectedToken?: string; skewMs: number }): Promise<CoperaGrant | null> {
     const current = await this.read()
@@ -97,7 +99,14 @@ export class GrantStore {
       : current.accessToken === opts.rejectedToken
     if (!needed) return current
     this.inflight ??= this.refresh(current.accessToken).finally(() => { this.inflight = undefined })
-    return this.inflight
+    try {
+      return await this.inflight
+    } catch (error) {
+      // An early refresh that could not reach Copera leaves the current token usable until it expires.
+      const transient = error instanceof CoperaOAuthError && (error.reason === 'network' || error.reason === 'timeout')
+      if (transient && opts.rejectedToken === undefined && current.expiresAt > Date.now()) return current
+      throw error
+    }
   }
 
   /** Refresh under the credentials lock unless another writer already replaced `staleAccessToken`. */

@@ -27,6 +27,12 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
   }
 }
 
+/** First delay before the state stream is opened again after it ended or failed; each further failure doubles it. */
+const RESUBSCRIBE_DELAY_MS = 1_000
+
+/** Longest delay between two attempts to open the state stream. */
+const RESUBSCRIBE_MAX_DELAY_MS = 30_000
+
 /** Services required before the namespace mounts. */
 export const inject = ['remote', 'slots', 'locale']
 
@@ -51,27 +57,72 @@ function registerUi(ctx: Context): void {
   const publish = (state: CoperaAccountState): void => { account.set({ state, failed: false }) }
   const markFailed = (): void => { account.set({ ...account.getSnapshot(), failed: true }) }
 
+  const reload = async (): Promise<void> => {
+    const result = await ctx.remote.coperaAccount.getState()
+    if (!result.ok) throw result.error
+    publish(result.value)
+  }
+
   ctx.effect(() => {
-    const stream = ctx.remote.$stream<CoperaAccountState>({
-      name: 'coperaAccount',
-      open: signal => ctx.remote.coperaAccount.watch(signal),
-      ended: () => new Error('coperaAccount stream ended'),
-      carrierFailed: () => { markFailed() },
-    })
-    // Read across closures: the disposer ends this stream while the loop awaits.
+    // Read across closures: the disposer ends the current stream while its loop awaits.
     const lifetime = { ended: false }
-    void (async () => {
-      for await (const item of stream) {
-        if (lifetime.ended) return
-        publish(item.value)
-        item.accept()
+    let current: { dispose: () => Promise<void> } | undefined
+    let retry: ReturnType<typeof setTimeout> | undefined
+    // While the stream is down, a window that regains focus or visibility reads the state once.
+    const refresh = (): void => {
+      if (document.visibilityState === 'hidden') return
+      reload().catch((_unreachable: unknown) => {
+        // The stream retry and the unreachable screen's own retry remain.
+      })
+    }
+    let watchingFocus = false
+    const watchFocus = (on: boolean): void => {
+      if (on === watchingFocus) return
+      watchingFocus = on
+      if (on) {
+        window.addEventListener('focus', refresh)
+        document.addEventListener('visibilitychange', refresh)
+      } else {
+        window.removeEventListener('focus', refresh)
+        document.removeEventListener('visibilitychange', refresh)
       }
-    })().catch(() => {
-      if (!lifetime.ended) markFailed()
-    })
+    }
+    const subscribe = (failures: number): void => {
+      const stream = ctx.remote.$stream<CoperaAccountState>({
+        name: 'coperaAccount',
+        open: signal => ctx.remote.coperaAccount.watch(signal),
+        ended: () => new Error('coperaAccount stream ended'),
+        carrierFailed: () => { markFailed() },
+      })
+      current = stream
+      let delivered = false
+      void (async () => {
+        for await (const item of stream) {
+          if (lifetime.ended) return
+          delivered = true
+          watchFocus(false)
+          publish(item.value)
+          item.accept()
+        }
+      })().catch((_streamFailed: unknown) => {
+        // An ended or failed stream is resubscribed below.
+      }).finally(() => {
+        if (lifetime.ended) return
+        markFailed()
+        watchFocus(true)
+        const attempt = delivered ? 0 : failures
+        retry = setTimeout(() => {
+          void stream.dispose()
+          subscribe(attempt + 1)
+        }, Math.min(RESUBSCRIBE_MAX_DELAY_MS, RESUBSCRIBE_DELAY_MS * 2 ** attempt))
+      })
+    }
+    subscribe(0)
     return () => {
       lifetime.ended = true
-      return stream.dispose()
+      clearTimeout(retry)
+      watchFocus(false)
+      return current?.dispose()
     }
   }, 'copera-account: state stream')
 
@@ -103,11 +154,7 @@ function registerUi(ctx: Context): void {
       const result = await ctx.remote.coperaAccount.signOut()
       if (!result.ok) throw result.error
     },
-    async reload() {
-      const result = await ctx.remote.coperaAccount.getState()
-      if (!result.ok) throw result.error
-      publish(result.value)
-    },
+    reload,
   }
 
   ctx.slots.inject('shell.overlay', () => ctx.slots.register({

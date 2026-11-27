@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 /** The sign-in screen blocks the client while signed out and reports every sign-in phase. */
+import { globSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { bindSnapshotSelector, makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
@@ -140,4 +142,23 @@ it('moves focus from the loading screen to the sign-in button when the state arr
   expect(document.activeElement).toBe(screen.getByRole('dialog'))
   act(() => { store.set({ state: signedOut, failed: false }) })
   expect(document.activeElement).toBe(screen.getByRole('button', { name: en.signIn }))
+})
+
+it('clears a failed start when the account state changes, so an expired session is reported', async () => {
+  const { props, store } = mount(signedOut)
+  vi.mocked(props.signIn).mockRejectedValueOnce(new Error('offline'))
+  await act(async () => { fireEvent.click(screen.getByRole('button', { name: en.signIn })) })
+  expect(screen.getByRole('dialog', { name: en.failedTitle })).toBeTruthy()
+  act(() => { store.set({ state: { ...signedOut, notice: 'session-expired' }, failed: false }) })
+  expect(screen.getByRole('dialog', { name: en.sessionExpiredTitle })).toBeTruthy()
+})
+
+it('stacks above every other shell layer, toasts and portaled menus included', () => {
+  const root = join(import.meta.dirname, '../..')
+  const gate = Number(/\.gate\s*\{[^}]*z-index:\s*(\d+)/u.exec(readFileSync(join(root, 'ui-copera-account/src/client/LoginGate.module.css'), 'utf8'))?.[1])
+  const others = globSync('*/src/**/*.css', { cwd: root })
+    .filter(path => !path.startsWith('ui-copera-account/'))
+    .flatMap(path => [...readFileSync(join(root, path), 'utf8').matchAll(/z-index:\s*(\d+)/gu)].map(match => Number(match[1])))
+  expect(others.length).toBeGreaterThan(0)
+  expect(gate).toBeGreaterThan(Math.max(...others))
 })

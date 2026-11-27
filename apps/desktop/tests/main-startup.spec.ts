@@ -3182,7 +3182,60 @@ describe('desktop main startup', () => {
     await harness.dialogShown.promise
     expect(harness.hosts).toHaveLength(0)
     expect((harness.dialog.showMessageBox.mock.calls[0]![0] as { detail: string }).detail)
-      .toContain('COPERA_CODE_API_ORIGIN must be an https:// URL')
+      .toContain('COPERA_CODE_API_ORIGIN must be an https origin')
+  })
+
+  // COPERA: Dock and Finder launches inherit launchd's environment, so COPERA_CODE_* exported in a shell profile
+  // reaches the Host only through the login-shell read; the data home stays the one resolved at startup.
+  it('maps COPERA_CODE_* from the login shell and keeps the startup data home', async () => {
+    harness.loginShell.mockImplementation(async (base) => {
+      const environment = {
+        ...base,
+        DSH_TEST_LOGIN_SHELL: 'login',
+        COPERA_CODE_TOKEN: 'shell-token',
+        COPERA_CODE_API_ORIGIN: 'https://api.staging.example.test',
+        COPERA_CODE_HOME: '/shell/home',
+      }
+      return { environment, failures: [] as Array<{ shell: string; reason: string }> }
+    })
+    const host = await readyForUpdate()
+    expect(host.environment).toMatchObject({
+      DSH_HOME: join(homedir(), '.copera-code'), DSH_TELEMETRY_DISABLED: '1',
+      DSH_COPERA_TOKEN: 'shell-token', DSH_COPERA_API_ORIGIN: 'https://api.staging.example.test',
+      DSH_COPERA_PRODUCT_VERSION: '1.0.0',
+    })
+  })
+
+  it('does not trust DSH_COPERA_* or DSH_HOME values the login shell carries', async () => {
+    harness.loginShell.mockImplementation(async (base) => {
+      const environment = {
+        ...base,
+        DSH_TEST_LOGIN_SHELL: 'login',
+        DSH_COPERA_TOKEN: 'inherited-token',
+        DSH_COPERA_API_ORIGIN: 'https://inherited.example.test',
+        DSH_HOME: '/inherited',
+      }
+      return { environment, failures: [] as Array<{ shell: string; reason: string }> }
+    })
+    const host = await readyForUpdate()
+    expect(host.environment).toMatchObject({ DSH_HOME: join(homedir(), '.copera-code') })
+    expect(host.environment).not.toHaveProperty('DSH_COPERA_TOKEN')
+    expect(host.environment).not.toHaveProperty('DSH_COPERA_API_ORIGIN')
+  })
+
+  it('does not start a Host with an invalid COPERA_CODE_API_ORIGIN from the login shell', async () => {
+    harness.loginShell.mockImplementation(async (base) => {
+      const environment = {
+        ...base,
+        DSH_TEST_LOGIN_SHELL: 'login',
+        COPERA_CODE_API_ORIGIN: 'http://api.example.test',
+      }
+      return { environment, failures: [] as Array<{ shell: string; reason: string }> }
+    })
+    await import('../src/main.ts')
+    await harness.dialogShown.promise
+    expect(harness.hosts).toHaveLength(0)
+    expect(JSON.stringify(harness.dialog.showMessageBox.mock.calls)).toContain('COPERA_CODE_API_ORIGIN must be an https origin')
   })
 
   it('sends Copera sign-in to the system browser and keeps the upstream rule for other links', async () => {

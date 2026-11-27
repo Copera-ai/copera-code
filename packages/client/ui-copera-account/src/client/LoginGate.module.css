@@ -1,8 +1,8 @@
-/* The screen covers every shell layer, onboarding and Modal included (Modal is 1000); toasts and portaled menus (1100) stay above it. Theme tokens set its ground, ink, and accent (the Copera token layer of ui-brand-copera). */
+/* The screen covers every shell layer: onboarding, Modal (1000), and the toasts and portaled menus (1100) the signed-out shell can raise behind it; the client has no shared layering scale, so the value sits one step above the highest shell layer. Theme tokens set its ground, ink, and accent (the Copera token layer of ui-brand-copera). */
 .gate {
   position: fixed;
   inset: 0;
-  z-index: 1050;
+  z-index: 1200;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -9,8 +9,8 @@
   en: b15c555815c7cf6f
   zh: 8b161699f3d90ee4
 /deepseek-ai-dsh-copera-app/summary:
-  en: 3f3aa92285437112
-  zh: 97e931c0af246c63
+  en: 3afa26c7b1770d4a
+  zh: 04c3ed4c05866cdb
 /deepseek-ai-dsh-copera-app/table-of-contents:
   en: d152484eb41ac6b4
   zh: fcb8aebace5f460f
@@ -21,11 +21,14 @@
   en: 372ea78c7580a2f1
   zh: a19c0d7a14f81ee5
 /deepseek-ai-dsh-copera-app/use-this-package/what-you-get:
-  en: c3c14a9c89dd1aa5
-  zh: da6db099f2f1ed44
+  en: 72a971a6862ff6e3
+  zh: e3824524a21d7559
+/deepseek-ai-dsh-copera-app/use-this-package/product-lock:
+  en: 366a228acaacbc9b
+  zh: 463bef47184ad305
 /deepseek-ai-dsh-copera-app/understand-the-implementation:
-  en: a5ce40b664017530
-  zh: d60388244296a8a4
+  en: a363e9ff8a0c2805
+  zh: 19a431325331f271
 /deepseek-ai-dsh-copera-app/further-exploration:
   en: ff25a03b6656432e
   zh: 2c4f7fa085ef28c3
@@ -68,6 +71,18 @@
 /deepseek-ai-dsh-copera-app/model-experience/plugin-manager-tool-removed/kv-cache-effect:
   en: ed994ff29744aac7
   zh: da1d08adb1e8251f
+/deepseek-ai-dsh-copera-app/model-experience/harness-documentation-skill-removed:
+  en: fde535adb6a7a798
+  zh: 9f0e2e925bed167d
+/deepseek-ai-dsh-copera-app/model-experience/harness-documentation-skill-removed/what-the-model-sees:
+  en: 83fc72166d2f40e8
+  zh: 572d365821eefb73
+/deepseek-ai-dsh-copera-app/model-experience/harness-documentation-skill-removed/token-effect:
+  en: b97be09dd159e3b3
+  zh: 7f0c636cd024ca2c
+/deepseek-ai-dsh-copera-app/model-experience/harness-documentation-skill-removed/kv-cache-effect:
+  en: 651df618bd7b2673
+  zh: fc9956ab3a4a6a9c
 /deepseek-ai-dsh-copera-app/model-experience/compaction-summaries:
   en: 77ed12b726428111
   zh: af67f7cc97dbd9a0
@@ -81,8 +96,8 @@
   en: 2cc5f8b390723cc2
   zh: 2e391d606032cb1b
 /deepseek-ai-dsh-copera-app/known-limitations-and-deferred-work:
-  en: 029df058a002abfe
-  zh: dca20bd1a0662509
+  en: 1f3b009d5a158c44
+  zh: 4cb55fa33a14cfd7
 /deepseek-ai-dsh-copera-app/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: e88aeb617ffb74ea

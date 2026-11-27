@@ -110,7 +110,8 @@ export function mapShikaiError(status: number, body: unknown, headers: Headers):
  * QUOTA, AUTH, and PERMISSION use codes outside the default retryable set;
  * RATE_LIMIT carries Shikai's `retry-after` as `providerRetryAfterMs`, which
  * the route's retry policy honours. A retryable UPSTREAM failure reports
- * `SERVER`; any other UPSTREAM failure keeps pi-ai's own code. An in-stream
+ * `SERVER`; a server failure that forbids retries (`x-should-retry: false`) reports `HTTP_<status>`, which no retry
+ * policy repeats by default; any other UPSTREAM failure keeps pi-ai's own code. An in-stream
  * error carries no HTTP status.
  * @param response - the recorded error response or in-stream error event.
  * @param fallback - the failure pi-ai reported for the same request.
@@ -121,7 +122,10 @@ export function shikaiFailure(response: ShikaiHttpFailure, fallback: LlmFailure)
   const message = envelopeFields(response.body).message ?? fallback.message
   let code: string
   if (info.kind !== 'UPSTREAM') code = FAILURE_CODES[info.kind]
-  else code = info.retryable ? 'SERVER' satisfies BuiltinLlmFailureCode : fallback.code
+  else if (info.retryable) code = 'SERVER' satisfies BuiltinLlmFailureCode
+  // pi-ai reports a 5xx as SERVER, which the retry policy repeats; a refused retry keeps the status as its code.
+  else if (!response.inStream && response.status >= 500) code = `HTTP_${response.status}` satisfies BuiltinLlmFailureCode
+  else code = fallback.code
   return {
     message,
     code,

@@ -1,8 +1,9 @@
 /**
  * Copera Shikai adapter: the generic pi-ai adapter, fixed to the `copera`
  * route, authenticated by the `coperaTokens` service, and dispatched through a
- * per-request fetch that adds `include_reasoning`, replays one rejected token,
- * and records Shikai's error responses for classification.
+ * per-request fetch that stays on the Copera origin, identifies as Copera Code,
+ * adds `include_reasoning`, replays one rejected token, and records Shikai's
+ * error responses for classification.
  * @module
  */
 import { LlmAdapter, LlmError } from '@deepseek-ai/dsh-llm'
@@ -32,6 +33,16 @@ export interface CoperaAdapterOptions {
   resolveAttachments?: PiAiAdapterOptions['resolveAttachments']
   /** Bridge one attachment reference into the current model-tool execution world. */
   resolveImageAccess?: PiAiAdapterOptions['resolveImageAccess']
+  /** `User-Agent` of every Shikai request, replacing the harness attribution. */
+  userAgent: string
+}
+
+/** What one {@link ShikaiCall} may reach and how it identifies itself. */
+export interface ShikaiCallTarget {
+  /** The configured Copera API origin; a request for any other origin is refused before it is sent. */
+  origin: string
+  /** `User-Agent` of every request. */
+  userAgent: string
 }
 
 /**
@@ -72,35 +83,43 @@ function parseBody(text: string): unknown {
 }
 
 /** Per-request state: Shikai's final error response or in-stream error event. */
-class ShikaiCall {
+export class ShikaiCall {
+  /** Shikai's final error response or first in-stream error event of this call, once one was seen. */
   failure: ShikaiHttpFailure | undefined
 
-  constructor(private readonly tokens: CoperaTokenSource) {}
+  constructor(private readonly tokens: CoperaTokenSource, private readonly target: ShikaiCallTarget) {}
 
   /**
-   * Fetch implementation for one stream call. A POST to `/chat/completions`
-   * gets `include_reasoning: true`; a 401 reports the sent token once and
-   * replays once with a different replacement; the final non-2xx response is
-   * recorded before the SDK consumes it, and a 200 body is watched for an
-   * in-stream error event.
+   * Fetch implementation for one stream call. A request whose origin is not the configured Copera origin is refused
+   * before anything is sent, and no redirect is followed, so the bearer token reaches only that origin. Every request
+   * carries the Copera Code `User-Agent` and no `x-deepseek-*` header. A POST to `/chat/completions` gets
+   * `include_reasoning: true`; a 401 reports the sent token once and replays once with a different replacement; the
+   * final non-2xx response is recorded before the SDK consumes it, and a 200 body is watched for an in-stream error
+   * event.
    */
   readonly fetch: typeof globalThis.fetch = async (input, init) => {
     const url = urlOf(input)
+    if (url.origin !== this.target.origin) {
+      throw new LlmError(`llm-copera: refused a request outside ${this.target.origin}`, 'REQUEST_HEADERS')
+    }
     let body: BodyInit | null = init?.body ?? null
     if (init?.method === 'POST' && url.pathname.endsWith('/chat/completions') && typeof body === 'string') {
       const payload = JSON.parse(body) as Record<string, unknown>
       body = JSON.stringify({ ...payload, include_reasoning: true })
     }
     const headers = new Headers(init?.headers)
+    for (const name of [...headers.keys()]) if (name.startsWith('x-deepseek')) headers.delete(name)
+    headers.set('user-agent', this.target.userAgent)
+    const send = (): Promise<Response> => globalThis.fetch(url, { ...init, headers, body, redirect: 'error' })
     // Read globalThis.fetch per call so a proxy-aware dispatcher installed after load still applies.
-    let response = await globalThis.fetch(url, { ...init, headers, body })
+    let response = await send()
     if (response.status === 401) {
       const sent = /^Bearer (.+)$/u.exec(headers.get('authorization') ?? '')?.[1]
       const replacement = sent === undefined ? undefined : await this.tokens.onRejected(sent)
       if (replacement !== undefined && replacement !== sent) {
         await response.body?.cancel()
         headers.set('authorization', `Bearer ${replacement}`)
-        response = await globalThis.fetch(url, { ...init, headers, body })
+        response = await send()
       }
     }
     if (!response.ok) {
@@ -205,7 +224,7 @@ export class CoperaAdapter extends LlmAdapter {
     if (token === undefined || token.length === 0) {
       throw new LlmError('Copera Code is signed out; sign in to Copera to use Shikai', 'AUTH')
     }
-    const call = new ShikaiCall(this.options.tokens)
+    const call = new ShikaiCall(this.options.tokens, { origin: new URL(this.options.baseUrl).origin, userAgent: this.options.userAgent })
     const adapter = this.piAdapter(() => Promise.resolve(token), call.fetch)
     for await (const chunk of adapter.stream(options)) {
       if (chunk.type === 'finish' && chunk.reason.kind === 'error' && call.failure !== undefined) {

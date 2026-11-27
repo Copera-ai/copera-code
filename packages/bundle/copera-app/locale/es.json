@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Bloqueo de producto de Copera Code",
+    "description": "Impide el inicio cuando una capa de patch posterior reactiva una fila que Copera Code mantiene desactivada, registra otra ruta de modelo o quita el paquete de Copera Code."
+  }
+}

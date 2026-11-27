@@ -30,7 +30,18 @@ const PROJECT_NAME = '@deepseek-ai/dsh-desktop-runtime'
 const DSH_PACKAGE = '@deepseek-ai/dsh'
 const CORE_BUILD_PACKAGE = '@deepseek-ai/dsh-subprocess-local'
 // COPERA: the profile keeps the internal name `desktop` and composes the Copera Code bundles.
-const WEB_PROFILE = (PROFILE_TEMPLATES.copera ?? PROFILE_TEMPLATES.web) as ProfileTemplate
+/**
+ * Select the template the Desktop profile composes.
+ * @param templates - shipped profile templates.
+ * @returns the `copera` template.
+ * @throws when the shipped templates have no `copera` entry; Desktop never falls back to another product profile.
+ */
+export function desktopProfileTemplate(templates: Readonly<Record<string, ProfileTemplate | undefined>>): ProfileTemplate {
+  const template = templates.copera
+  if (template === undefined) throw new Error('desktop project: the shipped profile templates have no copera template')
+  return template
+}
+const WEB_PROFILE = desktopProfileTemplate(PROFILE_TEMPLATES)
 const WORKSPACE_SETTINGS = 'nodeLinker: hoisted\nautoInstallPeers: false\n'
 function writeJson(path: string, value: unknown): void {
   writeFileSync(path, `${JSON.stringify(value, undefined, 2)}\n`, { mode: 0o600 })

@@ -105,15 +105,6 @@ export function apply(ctx) {
   if (!(ctx instanceof Context)) throw new Error('desktop runtime: external plugin loaded another Cordis instance')
   ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke',
     handler(_request, response) { response.end('plugin route ready') } }))
-  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-install',
-    async handler(_request, response) {
-      try {
-        response.end(JSON.stringify(await ctx.pluginManager.installBundle(${JSON.stringify(installedPlugin)})))
-      } catch (error) {
-        response.statusCode = 500
-        response.end(inspect(error, { depth: 5 }))
-      }
-    } }))
   ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-skills',
     async handler(_request, response) {
       try {
@@ -171,7 +162,9 @@ export function apply(ctx) {
   }
 }
 `)
-    writeFileSync(join(plugin, 'bundle.yml'), '- insert:\n    - id: desktop-runtime-smoke-plugin\n      name: desktop-runtime-smoke-plugin\n      inject: [webServer, officeKit, pluginManager, skills]\n')
+    // COPERA: the Copera Code profile mounts no Plugin Manager, so the smoke plugin injects no pluginManager and the
+    // Host-side bundle installation check below is omitted; the CLI offline installation above still runs.
+    writeFileSync(join(plugin, 'bundle.yml'), '- insert:\n    - id: desktop-runtime-smoke-plugin\n      name: desktop-runtime-smoke-plugin\n      inject: [webServer, officeKit, skills]\n')
     cpSync(plugin, join(profile, 'node_modules', pluginName), { recursive: true })
     const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8')) as {
       dependencies?: Record<string, string>
@@ -192,14 +185,6 @@ export function apply(ctx) {
     }
     const pluginResponse = await fetch(new URL('/desktop-smoke', ready.url), { headers: { cookie } })
     if (await pluginResponse.text() !== 'plugin route ready') throw new Error('desktop runtime: plugin HTTP route failed')
-    const installation = await fetch(new URL('/desktop-smoke-install', ready.url), {
-      headers: { cookie }, signal: AbortSignal.timeout(120_000),
-    })
-    const installationResult = await installation.text()
-    const installed = await fetch(new URL('/desktop-smoke-installed', ready.url), { headers: { cookie } })
-    if (!installation.ok || !installed.ok || await installed.text() !== 'installed plugin ready') {
-      throw new Error(`desktop runtime: bundled pnpm plugin installation failed: ${installationResult}`)
-    }
     const skills = await fetch(new URL('/desktop-smoke-skills', ready.url), { headers: { cookie }, signal: AbortSignal.timeout(120_000) })
     if (!skills.ok) throw new Error(`desktop runtime: Office skill loading failed: ${await skills.text()}`)
     const loadedSkills = await skills.json() as { name: string; bytes: number }[]

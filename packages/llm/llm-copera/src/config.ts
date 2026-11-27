@@ -51,6 +51,20 @@ export function coperaBaseUrl(env: CoperaEnvironment): string {
   return `${url.origin}${PUBLIC_API_PATH}`
 }
 
+/** Project URL in the Copera Code `User-Agent` comment. */
+const PRODUCT_URL = 'https://github.com/Copera-ai/copera-code'
+
+/**
+ * The `User-Agent` of every Shikai request.
+ * @param productVersion - `DSH_COPERA_PRODUCT_VERSION` from the launching process, which the product launcher sets.
+ * @returns `copera-code/<version> (+https://github.com/Copera-ai/copera-code)`; the version is `unknown` when unset
+ *   or not an RFC 9110 token, such as a source launch without the product launcher.
+ */
+export function coperaUserAgent(productVersion: string | undefined): string {
+  const version = productVersion !== undefined && /^[0-9A-Za-z][0-9A-Za-z.+_-]*$/u.test(productVersion) ? productVersion : 'unknown'
+  return `copera-code/${version} (+${PRODUCT_URL})`
+}
+
 /**
  * Shikai's request dialect: `max_tokens`, the `system` role, streamed usage,
  * and no `store` or `reasoning_effort`, which are not part of its documented request.

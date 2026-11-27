@@ -36,6 +36,14 @@ import {
 } from './macos-app-update-config.mjs'
 import { desktopUpdatesEnabled, productIdentity } from './product-identity.mjs' // COPERA: identity and auto-update switch.
 
+// COPERA: legal files every Copera Code package carries in its resources directory.
+/** Repository files copied into the application's resources directory, beside the application archive. */
+export const COPERA_LEGAL_RESOURCES = [
+  { from: fileURLToPath(new URL('../../../LICENSE', import.meta.url)), to: 'LICENSE' },
+  { from: fileURLToPath(new URL('../../../THIRD_PARTY_NOTICES.md', import.meta.url)), to: 'THIRD_PARTY_NOTICES.md' },
+  { from: fileURLToPath(new URL('../../../packages/client/ui-brand-copera/src/client/fonts/OFL.txt', import.meta.url)), to: 'OFL-Inter.txt' },
+]
+
 /**
  * Create electron-builder configuration from one release environment.
  * @param {NodeJS.ProcessEnv} env - Packaging environment.
@@ -169,6 +177,8 @@ export function createElectronBuilderConfig(
     extraResources: [
       { from: buildPaths.runtime, to: 'runtime' },
       { from: fileURLToPath(new URL('../resources/icon-windows.png', import.meta.url)), to: 'icon.png' },
+      // COPERA: the product licence, the third-party notices, and the licence of the embedded Inter font.
+      ...COPERA_LEGAL_RESOURCES,
       // Windows tray bitmaps; macOS keeps the Dock and ships no menu bar icon.
       ...(packagesWindows ? [{ from: fileURLToPath(new URL('../resources/tray-windows.ico', import.meta.url)), to: 'tray.ico' }] : []),
     ],

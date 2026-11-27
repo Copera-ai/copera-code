@@ -7,10 +7,10 @@ export type FakeAnswer =
   /** A complete non-stream response, typically an OpenAI error envelope. */
   | { status: number; headers?: Record<string, string>; body: unknown }
   /**
-   * A 200 SSE response written as raw text, one string per write. `end`
+   * A 200 SSE response written as raw text or bytes, one entry per write. `end`
    * selects how it stops: a normal end, a destroyed socket, or held open.
    */
-  | { sse: string[]; end?: 'end' | 'destroy' | 'hold' }
+  | { sse: Array<string | Uint8Array>; end?: 'end' | 'destroy' | 'hold' }
 
 /** One request the fake received. */
 export interface FakeRequest {

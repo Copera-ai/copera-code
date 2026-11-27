@@ -17,7 +17,8 @@
     "bin",
     "README.md",
     "LICENSE",
-    "THIRD_PARTY_NOTICES.md"
+    "THIRD_PARTY_NOTICES.md",
+    "OFL-Inter.txt"
   ],
   "publishConfig": {
     "access": "public"

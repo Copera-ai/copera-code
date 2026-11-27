@@ -45,6 +45,10 @@ const DESKTOP_UPLOAD_CREDENTIAL_ENV_NAMES = new Set([
   'DOWNLOAD_PROD_COS_SECRET_KEY',
 ])
 
+// COPERA: the one client build profile every Copera Code packaging stage builds and then requires.
+/** Client build profile the Desktop build writes and the packing stages require of its record. */
+export const DESKTOP_CLIENT_BUILD_PROFILE = 'copera'
+
 /** `--build-version` value that numbers a build after the ones already taken. */
 const AUTOMATIC_BUILD_VERSION = 'auto'
 
@@ -482,7 +486,7 @@ export async function packageTarget(
     })
   }
   // COPERA: every Copera Code package builds the Web client with the `copera` client build profile.
-  await execute(['run', 'build', '--profile', 'copera'], buildEnv, REPOSITORY_ROOT)
+  await execute(['run', 'build', '--profile', DESKTOP_CLIENT_BUILD_PROFILE], buildEnv, REPOSITORY_ROOT)
   let preparationFailure: { error: unknown } | undefined
   const executePreparation = async (args: readonly string[], env: NodeJS.ProcessEnv, cwd?: string): Promise<void> => {
     if (preparationFailure !== undefined) throw preparationFailure.error
@@ -494,6 +498,8 @@ export async function packageTarget(
       ...(invocation.unsigned
         ? ['exec', 'tsx', 'apps/desktop/scripts/pack-local-packages.ts']
         : ['run', 'release:pack', '--family', 'dsh']),
+      // COPERA: the packing check expects the profile built above.
+      '--client-profile', DESKTOP_CLIENT_BUILD_PROFILE,
       '--out', buildPaths.packedDsh, ...packArguments,
     ], buildEnv, REPOSITORY_ROOT)
     await executePreparation([

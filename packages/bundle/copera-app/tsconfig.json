@@ -10,6 +10,21 @@
   "references": [
     {
       "path": "../../../vendor/cordis"
+    },
+    {
+      "path": "../../../vendor/schemastery"
+    },
+    {
+      "path": "../../../vendor/loader"
+    },
+    {
+      "path": "../../boot/app-boot"
+    },
+    {
+      "path": "../../boot/cmdline"
+    },
+    {
+      "path": "../../llm/llm"
     }
   ]
 }

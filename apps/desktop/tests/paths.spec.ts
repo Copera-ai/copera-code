@@ -34,7 +34,7 @@ describe('Desktop product environment', () => {
 
   it('isolates the data home before rejecting an invalid API origin', () => {
     const env: NodeJS.ProcessEnv = { DSH_HOME: '/home/u/.dsh', COPERA_CODE_API_ORIGIN: 'http://api.example.test', DSH_COPERA_API_ORIGIN: 'https://old.example.test' }
-    expect(() => { applyDesktopProductEnvironment(env, '/home/u') }).toThrow('COPERA_CODE_API_ORIGIN must be an https:// URL')
+    expect(() => { applyDesktopProductEnvironment(env, '/home/u') }).toThrow('COPERA_CODE_API_ORIGIN must be an https origin') // COPERA: the launcher's origin rule
     expect(env.DSH_HOME).toBe(join('/home/u', '.copera-code'))
     expect(env).not.toHaveProperty('DSH_COPERA_API_ORIGIN')
   })

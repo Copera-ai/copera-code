@@ -924,6 +924,18 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'coperaProductLock',
+    summary: 'The service value the guard provides while the lock holds.',
+    description: 'The service value the guard provides while the lock holds.',
+    methods: [
+      {
+        signature: 'readonly holds: true',
+        description: 'Always true; the service exists only while the lock holds.',
+        parameters: [],
+      },
+    ],
+  },
+  {
     key: 'coperaTokens',
     summary: 'Supplies the current Copera access token and replaces a token that Shikai rejected.',
     description: 'Supplies the current Copera access token and replaces a token that Shikai rejected. Implementations own storage, refresh, and serialization of concurrent refreshes; the adapter never reads a token from the environment.',

@@ -73,13 +73,15 @@ import { DesktopTray } from './tray.ts'
 import { DesktopBackgroundNotice } from './background-notice.ts'
 import { homedir } from 'node:os'
 import { productIdentity } from '#product-identity'
-import { applyDesktopProductEnvironment } from './product-environment.ts'
+import { applyDesktopProductEnvironment, applyHostProductEnvironment } from './product-environment.ts'
 
 // COPERA: map COPERA_CODE_* to the protected DSH_* names before any Desktop path resolves or the Host starts;
 // the Host and every recovery path inherit process.env. An invalid value is reported once main runs.
 let productEnvironmentFailure: Error | undefined
 try { applyDesktopProductEnvironment(process.env, homedir()) }
 catch (error) { productEnvironmentFailure = error instanceof Error ? error : new Error(String(error)) }
+/** Data home resolved above; the login-shell merge cannot move it after Desktop paths are resolved. */
+const productDataHome = process.env.DSH_HOME ?? join(homedir(), productIdentity.homeDirName)
 
 let focusPrimaryWindow = (): void => {}
 let stopForRecovery = async (): Promise<void> => { await stopOperationReports() }
@@ -409,8 +411,11 @@ async function main(): Promise<void> {
     signal: loginShellRead.signal,
   }).then((result) => {
     for (const failure of result.failures) console.warn(`desktop login shell: ${failure.shell} failed (${failure.reason})`)
-    return result.environment
+    // COPERA: COPERA_CODE_TOKEN and COPERA_CODE_API_ORIGIN from a shell profile apply to Dock and Finder launches too.
+    return applyHostProductEnvironment(result.environment, productDataHome)
   })
+  // Host preparation awaits the read and reports its failure; until then a rejection is not unhandled.
+  loginShell.catch((_reportedOnHostStart: unknown) => undefined)
   let hostEnvironment: NodeJS.ProcessEnv = process.env
   const prepareHostEnvironment = async (): Promise<void> => { hostEnvironment = await loginShell }
   let quitting = false
@@ -544,7 +549,9 @@ async function main(): Promise<void> {
   const backend = new DesktopBackendController((onFailure) => {
     const hostInspectPort = developmentHostInspectPort(development)
     const host = new DesktopHostProcess(resources.node, resources.dsh, activeProject,
-      hostInspectPort, { ...hostEnvironment, DSH_CLIENT_VERSION: desktopClientVersion() }, onFailure,
+      // COPERA: the Copera route names the installed product version in its User-Agent.
+      hostInspectPort,
+      { ...hostEnvironment, DSH_CLIENT_VERSION: desktopClientVersion(), DSH_COPERA_PRODUCT_VERSION: app.getVersion() }, onFailure,
       primaryRuntime,
       resources, (next) => { platformView.setSession(next) }, (record) => {
         operationJournal ??= new OperationJournal(join(app.getPath('userData'), 'plugin-operations'), {

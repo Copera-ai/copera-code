@@ -59,9 +59,9 @@ kind: "package-reference"
 <a id="understand-the-implementation"></a>
 ## 理解实现
 
-浏览器入口用 `ctx.remote.$mount` 挂载生成的 `coperaAccount` 贡献，在 `remote.coperaAccount` 可用后注册界面；卸载时先移除界面，再移除命名空间。基于 `watch()` 的一个可重连 `$stream` 把每个状态发布到两个注册共享的快照存储，`startSignIn` 和 `getState` 的响应也以同样方式发布。载体断开时保留最后的状态并把视图标记为失败。
+浏览器入口用 `ctx.remote.$mount` 挂载生成的 `coperaAccount` 贡献，在 `remote.coperaAccount` 可用后注册界面；卸载时先移除界面，再移除命名空间。基于 `watch()` 的一个可重连 `$stream` 把每个状态发布到两个注册共享的快照存储，`startSignIn` 和 `getState` 的响应也以同样方式发布。载体断开时保留最后的状态并把视图标记为失败。流结束或失败时，客户端在 1 秒后重新打开它，每次未交付任何状态的订阅之后延迟加倍，最长 30 秒；在收到状态之前，窗口重新获得焦点或变为可见时读取一次 `getState`。启动失败只属于发起它时的状态，因此 Host 的更新状态（例如会话过期）会替换失败界面。该界面叠放在所有其他外壳层之上，包括提示框与弹出菜单。
 
-普通浏览器会拦截在 await 之后打开的标签页，因此点击时先打开空白标签页、清除其 opener，并在 `startSignIn` 返回时导航到 `attempt.authorizeUrl`；启动被拒绝时关闭它。桌面壳会把每个 http(s) 地址的 `window.open` 转到系统浏览器并拒绝创建窗口，因此桌面客户端直接打开该地址。两种客户端中的“再次打开浏览器”都在点击中调用 `window.open`。
+普通浏览器会拦截在 await 之后打开的标签页，因此点击时先打开空白标签页、清除其 opener，并在 `startSignIn` 返回时导航到 `attempt.authorizeUrl`；启动被拒绝时关闭它。不是 `https:`、也不是 `127.0.0.1` 或 `[::1]` 上的 `http:` 的 `authorizeUrl` 永远不会被打开。桌面壳会把每个 http(s) 地址的 `window.open` 转到系统浏览器并拒绝创建窗口，因此桌面客户端直接打开该地址。两种客户端中的“再次打开浏览器”都在点击中调用 `window.open`。
 
 所有颜色都来自 `--dsw-*` 主题令牌：主按钮使用 `--dsw-alias-brand-primary`，文字使用 `--dsw-alias-label-primary-foreground`，屏幕背景使用 `--dsw-alias-bg-base`。`ui-brand-copera` 的 Copera 令牌层把它们设为 Copera 蓝、白色和深色模式下的 `#050505`。
 
@@ -88,6 +88,7 @@ kind: "package-reference"
 
 - 在 Copera 主题发布对应令牌之前，Copera 蓝是包内的字面值。
 - 剩余时间由浏览器时钟对照 Host 的 `expiresAt` 计算；两者的时钟偏差只影响显示，不影响 Host 的过期时间。
+- 在 `localhost` 打开的页面使用 `127.0.0.1` 回调源登录，因为客户端无法询问 Host 绑定在哪个回环地址；因此以 `--host ::1` 启动并在 `localhost` 打开的 Host 无法完成登录，请改用 `http://[::1]:<port>` 打开。
 - 如果普通浏览器的弹窗拦截也拦截了点击时打开的空白标签页，界面会显示等待状态但没有标签页；“再次打开浏览器”会打开它。
 
 <a id="dev-note"></a>

@@ -854,5 +854,7 @@ describe('client bundle CSS Modules watch graph', () => {
     await plugin.load?.call({ addWatchFile }, virtualId)
 
     expect(addWatchFile).toHaveBeenCalledExactlyOnceWith(stylesheet)
+    // COPERA: shipped region comments carry the module id, so it names the stylesheet relative to the repository.
+    expect(virtualId).toBe('\0dsh-css:packages/client/ui-conversation/src/client/queue/QueueDock.module.css.mjs')
   })
 })

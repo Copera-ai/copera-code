@@ -3,7 +3,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button, IconLoadingOutlineRegular, useModalLayer } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
-import type { CoperaAccountFace } from './account-ui.ts'
+import type { CoperaAccountFace, CoperaAccountView } from './account-ui.ts'
 import { gateKind, type GateKind } from './gate-view.ts'
 import type { CoperaAccountKey } from './locales.ts'
 import css from './LoginGate.module.css'
@@ -33,7 +33,11 @@ function keepOpen(): void {}
  */
 export function LoginGate(props: LoginGateProps) {
   const view = props.useCoperaAccount(value => value)
-  const [startFailed, setStartFailed] = useState(false)
+  const [failedFor, setFailedFor] = useState<CoperaAccountView['state'] | null>(null)
+  // A failed start belongs to the state it was attempted from; any newer Host state, such as an expired session,
+  // replaces it.
+  const startFailed = failedFor !== null && failedFor === view.state
+  const setStartFailed = (failed: boolean): void => { setFailedFor(failed ? view.state : null) }
   const kind = gateKind(view, props.login, startFailed)
   if (kind === 'hidden') return null
   return <GateSurface {...props} kind={kind} expiresAt={view.state?.attempt?.expiresAt}

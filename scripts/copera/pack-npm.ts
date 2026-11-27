@@ -23,6 +23,8 @@ import { applyStagePlan, completeStage, excludedBundles, indexPackages, isExclud
 const ROOT = resolve(import.meta.dirname, '../..')
 const TEMPLATE = join(import.meta.dirname, 'npm-package.template.json')
 const BIN_SHIM = join(import.meta.dirname, 'bin-shim.mjs')
+/** The Inter font licence, shipped next to THIRD_PARTY_NOTICES.md. */
+const INTER_LICENSE = join(ROOT, 'packages/client/ui-brand-copera/src/client/fonts/OFL.txt')
 const DEFAULT_OUT = 'dist/copera-npm'
 const DEFAULT_CLIENT_PROFILE = 'copera'
 
@@ -223,6 +225,7 @@ function writeOuterPackage(
   chmodSync(bin, 0o755)
   cpSync(join(ROOT, 'LICENSE'), join(packageDir, 'LICENSE'))
   cpSync(join(ROOT, 'THIRD_PARTY_NOTICES.md'), join(packageDir, 'THIRD_PARTY_NOTICES.md'))
+  cpSync(INTER_LICENSE, join(packageDir, 'OFL-Inter.txt'))
   replaceFile(join(packageDir, 'README.md'), PACKAGE_README.replace('NODE_RANGE', `\`${node}\``))
   return manifest
 }

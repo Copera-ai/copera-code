@@ -56,6 +56,8 @@ export class CoperaAccount extends TypertRemoteService {
   private readonly lifetime = new AbortController()
   private readonly revocations = new Set<Promise<void>>()
   private signingOut: Promise<void> | undefined
+  /** The grant write of a completing sign-in; sign-out waits for it so it can remove what it stores. */
+  private storing: Promise<void> | undefined
 
   /** @param ctx - Host Context with the `credentials` service; `webServer` must be running before sign-in starts. */
   constructor(ctx: Context) {
@@ -194,6 +196,8 @@ export class CoperaAccount extends TypertRemoteService {
   signOut(): Promise<void> {
     this.signingOut ??= (async () => {
       await this.cancelSignIn()
+      // A sign-in past its code exchange may be storing its grant; removing before it lands would leave it stored.
+      await this.storing?.catch((_failed: unknown) => undefined)
       let removed: { accessToken: string; refreshToken: string } | undefined
       // A concurrent refresh can rotate the grant between the read and the conditional removal.
       for (let tries = 0; tries < 3 && removed === undefined; tries++) {
@@ -225,7 +229,11 @@ export class CoperaAccount extends TypertRemoteService {
         signal: attempt.controller.signal,
       })
       if (this.attempt !== attempt) return 'failed'
-      await this.store.write(grant)
+      const storing = this.store.write(grant)
+      this.storing = storing
+      try { await storing } finally { if (this.storing === storing) this.storing = undefined }
+      // A sign-out that started during the write removes the grant; this attempt no longer reports success.
+      if (this.attempt !== attempt) return 'failed'
       this.attempt = undefined
       this.notice = null
       this.changed()
