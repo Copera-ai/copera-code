@@ -32,7 +32,7 @@ kind: "package-reference"
 
 `CoperaTokenSource` 有两个方法。`getAccessToken()` 返回当前令牌，用户未登录时返回 `undefined`；未登录的请求在任何网络 I/O 之前以 `AUTH` 失败。Shikai 返回 401 时调用一次 `onRejected(token)`；若得到不同的新令牌，同一请求重放一次，否则请求以 `AUTH` 结束。
 
-两个模型都声明 200,000 token 上下文窗口、16,000 token 默认输出上限、文本与图像输入，且没有推理强度档位。模型列表与登录状态无关。
+两个模型都声明 200,000 token 上下文窗口、文本与图像输入，且没有推理强度档位。没有输出上限：每个请求发送的 `max_tokens` 等于提示之后剩余的窗口减去 pi-ai 的 4,096 token 余量，因为字段缺失时 Shikai 在 16,000 token 处停止；压缩不预留补全 token。模型列表与登录状态无关。
 
 Shikai 的 HTTP 错误，以及已打开的流中的 `data: {"error":…}` 事件，按状态码以及错误信封中的 `code` 与 `type` 映射为 harness 失败代码。`insufficient_quota`、带 `x-should-retry: false` 的 429 以及 402 变为 `QUOTA`。其他 429 与 `rate_limit_exceeded` 变为 `RATE_LIMIT`，并把 `retry-after` 作为 `providerRetryAfterMs`。401 与 `permission_denied` 变为 `AUTH`。服务端错误变为 `SERVER`；带 `x-should-retry: false` 的服务端错误以 `HTTP_<status>` 作为代码，重试策略不会重复它。每个失败都带有 Shikai 自己的消息；失败来自 HTTP 响应时还带有 HTTP 状态。该路由使用默认重试策略：重试 `RATE_LIMIT` 与服务端失败，不重试 `QUOTA` 与 `AUTH`。`src/errors.ts` 中的 `mapShikaiError` 返回同样的分类，并附带用于界面文案的 `messageKey`。
 

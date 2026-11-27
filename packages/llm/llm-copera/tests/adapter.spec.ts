@@ -119,6 +119,16 @@ describe('CoperaAdapter request', () => {
     expect(roles).toEqual(['system', 'user'])
   })
 
+  it('sends max_tokens as the window left after the prompt when the caller sets no cap', async () => {
+    const fake = await fakeShikai([{ sse: textAnswer }])
+    register(fake, new FakeTokens('tok-1'))
+    await assemble(request({ system: 'be brief' }))
+    const maxTokens = fake.requests[0]?.body.max_tokens as number
+    // Shikai stops at 16,000 tokens without the field, so the window remainder is sent instead.
+    expect(maxTokens).toBeGreaterThan(190_000)
+    expect(maxTokens).toBeLessThan(200_000)
+  })
+
   it('identifies as Copera Code and sends no x-deepseek header', async () => {
     const fake = await fakeShikai([{ sse: textAnswer }])
     register(fake, new FakeTokens('tok-1'))
@@ -403,13 +413,13 @@ describe('CoperaAdapter catalog', () => {
     expect(fake.requests).toHaveLength(0)
   })
 
-  it('describes both models with a 200000-token window, a 16000-token output cap, and no reasoning efforts', async () => {
+  it('describes both models with a 200000-token window, no default output cap, and no reasoning efforts', async () => {
     const fake = await fakeShikai([])
     const adapter = register(fake, new FakeTokens('tok-1'))
     for (const id of ['shikai', 'shikai-ultra-fast']) {
       const info = await adapter.resolveModel(COPERA_ROUTE_ID, id)
       expect(info.context?.contextWindow).toBe(200000)
-      expect(info.defaultMaxTokens).toBe(16000)
+      expect(info.defaultMaxTokens).toBeUndefined()
       expect(info.reasoning).toBeUndefined()
     }
   })

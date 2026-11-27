@@ -77,13 +77,12 @@ const SHIKAI_COMPAT: OpenAICompletionsCompat = {
   maxTokensField: 'max_tokens',
 }
 
-/** The two model ids Shikai accepts, with the window and output cap it serves for both. */
+/** The two model ids Shikai accepts, with the context window it serves for both. */
 const SHIKAI_MODELS = [
   { id: 'shikai', name: 'Shikai' },
   { id: 'shikai-ultra-fast', name: 'Shikai Ultra-fast' },
 ] as const
 const SHIKAI_CONTEXT_WINDOW = 200_000
-const SHIKAI_MAX_TOKENS = 16_000
 
 /**
  * Request-image and stream limits of the route. They equal llm-pi-ai's
@@ -127,7 +126,9 @@ export function coperaProfiles(baseUrl: string): ReadonlyMap<string, ResolvedPiA
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     reasoning: false,
     contextWindow: SHIKAI_CONTEXT_WINDOW,
-    maxTokens: SHIKAI_MAX_TOKENS,
+    // No output cap of its own: pi-ai sends this, clamped to the window left after the prompt,
+    // because Shikai stops at 16,000 tokens when `max_tokens` is absent.
+    maxTokens: SHIKAI_CONTEXT_WINDOW,
     compat: { ...SHIKAI_COMPAT },
   }))
   const piProvider = createProvider<'openai-completions'>({
@@ -147,7 +148,8 @@ export function coperaProfiles(baseUrl: string): ReadonlyMap<string, ResolvedPiA
     retryPolicy: resolveRetryPolicy(undefined, `llm-copera: provider "${COPERA_ROUTE_ID}" retryPolicy`),
     piProvider,
     modelErrors: new Map(),
-    configuredMaxTokens: new Map(models.map(model => [model.id, model.maxTokens])),
+    // No default request cap, so compaction reserves no completion tokens out of the window.
+    configuredMaxTokens: new Map(),
   }
   return new Map([[COPERA_ROUTE_ID, profile]])
 }
