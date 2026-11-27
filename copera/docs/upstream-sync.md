@@ -244,3 +244,17 @@ gh workflow list --all --repo "$REPO"
 ```
 
 The final listing must show every file above as `disabled_manually` and `Copera CI` as `active`. A workflow added by a sync may not be listed until GitHub has seen it on a pushed branch; if its first run starts before it can be disabled, cancel it with `gh run cancel <run-id> --repo "$REPO"` and disable it then.
+
+## Activating Copera CI
+
+The workflow file is kept at `copera/ci/copera-ci.yml`, outside `.github/workflows/`, because the credential that first published this branch had no `workflow` scope and GitHub refuses pushes that add workflow files without it. Until it is moved, no Copera CI runs and references in this document to `.github/workflows/copera-ci.yml` mean this file.
+
+To activate it, from a checkout whose GitHub credential has the `workflow` scope (`gh auth refresh -h github.com -s workflow`):
+
+```sh
+git mv copera/ci/copera-ci.yml .github/workflows/copera-ci.yml
+git commit -m "ci(copera): activate Copera CI workflow"
+git push
+```
+
+The first run has never been observed. Expect to adjust it.
