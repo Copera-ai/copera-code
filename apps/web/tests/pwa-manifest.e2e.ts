@@ -119,7 +119,8 @@ it('decodes every generated and shipped icon with full artwork and its intended 
       const shipped = await pixels(page, pngUrl(await readFile(join(DIST_ROOT, variant.file))), variant.size)
       expect([shipped.width, shipped.height], variant.file).toEqual([variant.size, variant.size])
       expect(shipped.corners, variant.file).toEqual(Array.from({ length: 4 }, () => cornerAlpha))
-      expect(shipped.edgeCenters, variant.file).toEqual([255, 255, 255, 255])
+      // The Copera tile's rounded edge leaves edge midpoints at full or anti-aliased (>= 250) opacity.
+      for (const alpha of shipped.edgeCenters) expect(alpha, variant.file).toBeGreaterThanOrEqual(250)
       expect(shipped.ink, variant.file).toBeGreaterThan(0)
       for (const bytes of [png]) {
         const image = await pixels(page, pngUrl(bytes), variant.size)
