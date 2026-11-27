@@ -2,6 +2,13 @@
 
 import { valid } from 'semver'
 
+// COPERA: Copera Code's update location. The publisher is installed standalone (CI isolated install, purge command),
+// so it owns these values and Desktop packaging and upload read them from here.
+/** Production update origin: Cloudflare R2 behind a custom domain. */
+export const DESKTOP_UPDATE_PRODUCTION_ORIGIN = 'https://desktop.copera.io'
+/** Key prefix of every update object; the same host's `latest/` tree belongs to another application. */
+export const DESKTOP_UPDATE_KEY_PREFIX = 'copera-code'
+
 /** Environment variable that selects the Desktop update deployment. */
 export const DESKTOP_AUTO_UPDATE_ENV = 'DSH_DESKTOP_AUTO_UPDATE_ENV'
 
@@ -26,7 +33,7 @@ const UPDATE_ENVIRONMENTS = {
   },
   production: {
     originEnvName: undefined,
-    fixedOrigin: 'https://download.deepseek.com',
+    fixedOrigin: DESKTOP_UPDATE_PRODUCTION_ORIGIN, // COPERA: Copera Code's production update origin.
     bucketEnvName: 'DOWNLOAD_PROD_COS_BUCKET',
     secretIdEnvName: 'DOWNLOAD_PROD_COS_SECRET_ID',
     secretKeyEnvName: 'DOWNLOAD_PROD_COS_SECRET_KEY',
@@ -171,7 +178,7 @@ export function resolveDesktopAutoUpdateConfig(env, platform, arch) {
     if (originEnvName === undefined) throw new Error('desktop auto-update: selected deployment has no origin')
     origin = httpsOrigin(requiredEnvironmentValue(env, originEnvName), originEnvName)
   }
-  let releasePrefix = 'dsh-desk'
+  let releasePrefix = DESKTOP_UPDATE_KEY_PREFIX // COPERA: Copera Code's object key prefix.
   if (environment === 'test') {
     const releaseId = requiredEnvironmentValue(env, 'DOWNLOAD_TEST_RELEASE_ID')
     if (!/^[a-f0-9]{32}$/u.test(releaseId)) {
@@ -179,14 +186,16 @@ export function resolveDesktopAutoUpdateConfig(env, platform, arch) {
     }
     releasePrefix += `/${releaseId}`
   }
-  const keyPrefix = `${releasePrefix}/feeds/${target}`
+  // COPERA: one folder per target holds the channel YAML and the files it names, as electron-builder writes them,
+  // so a release is uploaded by copying the artifacts into that folder.
+  const keyPrefix = `${releasePrefix}/${target}`
   return {
     environment,
     channel,
     target,
     origin,
     keyPrefix,
-    binaryKeyPrefix: `${releasePrefix}/bin/${target}${channel === 'stable' ? '/stable' : ''}`,
+    binaryKeyPrefix: keyPrefix,
     publicUrl: `${origin}/${keyPrefix}/`,
   }
 }

@@ -1,4 +1,6 @@
 /** Exercise notarization overlap and artifact isolation without Apple credentials or network. */
+// COPERA: update objects use Copera Code's production origin (https://desktop.copera.io) and key prefix (copera-code/),
+// one folder per target holding the channel YAML and its files.
 
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
@@ -35,7 +37,7 @@ async function fixture(arch: 'arm64' | 'x64' = 'arm64', updates = true) {
   await writeFile(join(appPath, 'payload'), 'signed content')
   if (updates) {
     await writeMacOSAppUpdateConfig(join(appPath, 'Contents', 'Resources'), {
-      publicUrl: `https://desktop-updates.example.com/dsh-desk/0123456789abcdef0123456789abcdef/feeds/mac-${arch}/`,
+      publicUrl: `https://desktop-updates.example.com/copera-code/0123456789abcdef0123456789abcdef/mac-${arch}/`,
     }, 'copera-code-updater')
   }
   const version = '1.2.3-alpha.1'
@@ -123,7 +125,7 @@ describe('parallel macOS artifacts', () => {
         .toEqual({ payload: 'signed content', appTicket: false })
       expect(await readFile(join(f.appPath, 'ticket'), 'utf8')).toBe('accepted')
       expect(await readFile(join(f.appPath, 'Contents', 'Resources', 'app-update.yml'), 'utf8'))
-        .toContain(`/dsh-desk/0123456789abcdef0123456789abcdef/feeds/mac-${arch}/`)
+        .toContain(`/copera-code/0123456789abcdef0123456789abcdef/mac-${arch}/`)
       expect((await readdir(f.root)).sort()).toEqual(['artifacts'])
       expect(f.apple.verifySignature).toHaveBeenCalledTimes(4)
       expect(f.apple.verifyNotarization).toHaveBeenCalledTimes(1)

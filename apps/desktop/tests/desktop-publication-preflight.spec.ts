@@ -1,3 +1,6 @@
+// COPERA: update objects use Copera Code's production origin (https://desktop.copera.io) and key prefix (copera-code/),
+// one folder per target. Packaging forces the stable channel, so retention selects stable metadata whatever the preset
+// says; the completion record below still stands for a test-deployment build.
 import { load } from 'js-yaml'
 import { createHash } from 'node:crypto'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
@@ -31,10 +34,10 @@ it.each(['mac-arm64', 'win-x64'] as const)('preflights a complete retained %s bu
     await writeFile(join(artifacts, `${base}.${extension}.blockmap`), 'fixture blockmap')
     if (target !== 'win-x64') await writeFile(join(artifacts, `${base}.dmg`), 'fixture DMG')
     await writeFile(join(artifacts, `${target}-release.json`), JSON.stringify({
-      schemaVersion: 1, target, environment: 'test', version: '1.0.0', commit, dirty: false,
-      publicUrl: `https://example.com/dsh-desk/${releaseId}/feeds/${target}/`,
+      schemaVersion: 1, target, channel: 'stable', environment: 'test', version: '1.0.0', commit, dirty: false,
+      publicUrl: `https://example.com/copera-code/${releaseId}/${target}/`,
     }))
-    await writeFile(join(artifacts, target === 'win-x64' ? 'nightly.yml' : 'nightly-mac.yml'), JSON.stringify({
+    await writeFile(join(artifacts, target === 'win-x64' ? 'stable.yml' : 'stable-mac.yml'), JSON.stringify({
       version: '1.0.0', files: [{ url: `${base}.${extension}`, size: Buffer.byteLength(bytes),
         sha512: createHash('sha512').update(bytes).digest('base64') }],
     }))
@@ -44,7 +47,7 @@ it.each(['mac-arm64', 'win-x64'] as const)('preflights a complete retained %s bu
       DSH_DESKTOP_TARGET_PLATFORM: target === 'win-x64' ? 'win32' : 'darwin', DSH_DESKTOP_TARGET_ARCH: target === 'win-x64' ? 'x64' : 'arm64',
       PACKAGE_SOURCE_REF: 'master', PACKAGE_SOURCE_SHA: 'b'.repeat(40), PACKAGE_VERSION: '1.0.0', PACKAGE_SIGNING: 'signed', PACKAGE_SKIP_NOTARIZATION: 'false',
       GITHUB_RUN_ID: '10', GITHUB_RUN_ATTEMPT: '2', GITHUB_REPOSITORY: 'owner/repo', GITHUB_SHA: commit, RUNNER_NAME: 'fixture-runner',
-      DESKTOP_PUBLISH_ROUTE: JSON.stringify({ sourceRef: 'master', channel: 'nightly', runId: '10', attempt: '2', commit, runnerName: 'fixture-runner', target, preset: 'test' }),
+      DESKTOP_PUBLISH_ROUTE: JSON.stringify({ sourceRef: 'master', channel: 'stable', runId: '10', attempt: '2', commit, runnerName: 'fixture-runner', target, preset: 'test' }),
     }
     const retained = await retainDesktopCi(env, app)
     await rm(app, { recursive: true })
@@ -52,6 +55,7 @@ it.each(['mac-arm64', 'win-x64'] as const)('preflights a complete retained %s bu
     const signature = async () => { signatureChecks++ }
     const prepared = await prepareDesktopPublication(env, signature)
     expect(prepared.plan.version).toBe('1.0.0')
+    expect(prepared.manifest.source.channel).toBe('stable')
     expect(prepared.plan.artifacts.every(file => file.path.startsWith(retained))).toBe(true)
     expect(signatureChecks).toBe(1)
     const summary = await desktopPublicationSummary(prepared.manifest.source, prepared.plan, 'c'.repeat(64), false)

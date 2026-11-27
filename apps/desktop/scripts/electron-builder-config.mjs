@@ -23,7 +23,7 @@ import {
 import { resolveDesktopAutoUpdateConfig } from '@deepseek-ai/dsh-desktop-publisher/desktop-auto-update-environment.mjs'
 import { resolveDesktopBuildCommit } from './desktop-build-commit.mjs'
 import { resolveDesktopBuildVersion } from './desktop-build-version.mjs'
-import { resolveDesktopPolicyEnvironment } from './desktop-policy-environment.mjs'
+import { desktopPolicyConfigured, resolveDesktopPolicyEnvironment } from './desktop-policy-environment.mjs'
 import { desktopArtifactOutput, desktopTargetBuildPaths, resolveDesktopBuildTarget } from './desktop-build-paths.mjs'
 import { installWindowsDirectoryInstaller } from './windows-directory-installer.mjs'
 import { preserveWindowsRuntimeSignature, signWindowsCode } from './windows-runtime-signature.mjs'
@@ -75,9 +75,10 @@ export function createElectronBuilderConfig(
   if (skipNotarization && (unsigned || resolvedPlatform !== 'darwin')) throw new Error('Skipping notarization requires a signed macOS build')
   const packagesMacOS = targetPlatform === 'darwin' || (targetPlatform === undefined && hostPlatform === 'darwin')
   const packagesWindows = resolvedPlatform === 'win32'
-  // COPERA: DSH_DESKTOP_UPDATES=off (the product default) embeds no policy and no update feed, signed or not.
+  // COPERA: DSH_DESKTOP_UPDATES=off (the product default) embeds no policy and no update feed, signed or not;
+  // with updates on, a policy is embedded only when the settings name one.
   const updates = desktopUpdatesEnabled(env)
-  const policy = !updates || (packagesMacOS && unsigned) ? undefined : resolveDesktopPolicyEnvironment(env)
+  const policy = !updates || !desktopPolicyConfigured(env) || (packagesMacOS && unsigned) ? undefined : resolveDesktopPolicyEnvironment(env)
   if (resolvedPlatform === 'win32') installWindowsDirectoryInstaller()
   const macOSSigning = packagesMacOS && !unsigned ? resolveMacOSSigningEnvironment(env) : undefined
   if (packagesMacOS && !unsigned && !skipNotarization) resolveMacOSNotarizationEnvironment(env)
@@ -127,7 +128,8 @@ export function createElectronBuilderConfig(
       // The packaged manifest otherwise names the upstream author as the Windows publisher and macOS company.
       author: { name: 'Copera' },
       dshDesktopAppId: appId,
-      dshDesktopUpdates: updates ? 'on' : 'off',
+      // COPERA: only a build with an embedded feed (signed, updates on) shows the update menu and runs checks.
+      dshDesktopUpdates: update === undefined ? 'off' : 'on',
       dshDesktopUpdateChannel: update?.channel ?? 'nightly',
       ...(policy === undefined ? {} : { dshMandatoryUpdatePolicy: policy }),
       ...buildVersion === productVersion ? {} : { version: buildVersion },

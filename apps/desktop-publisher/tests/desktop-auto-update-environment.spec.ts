@@ -1,3 +1,5 @@
+// COPERA: update objects use Copera Code's production origin (https://desktop.copera.io) and key prefix (copera-code/),
+// with one folder per target holding the channel YAML and the files it names (no feeds/ or bin/ split).
 import { describe, expect, it } from 'vitest'
 import {
   desktopBuildRecordFilename,
@@ -29,9 +31,9 @@ describe('desktop auto-update environment', () => {
   ('uses one test release directory for %s %s feeds and binaries', (platform, arch, target) => {
     expect(resolveDesktopAutoUpdateConfig({ DOWNLOAD_TEST_ORIGIN: 'https://updates.example.com',
       DOWNLOAD_TEST_RELEASE_ID: RELEASE_ID }, platform, arch)).toMatchObject({
-      publicUrl: `https://updates.example.com/dsh-desk/${RELEASE_ID}/feeds/${target}/`,
-      keyPrefix: `dsh-desk/${RELEASE_ID}/feeds/${target}`,
-      binaryKeyPrefix: `dsh-desk/${RELEASE_ID}/bin/${target}`,
+      publicUrl: `https://updates.example.com/copera-code/${RELEASE_ID}/${target}/`,
+      keyPrefix: `copera-code/${RELEASE_ID}/${target}`,
+      binaryKeyPrefix: `copera-code/${RELEASE_ID}/${target}`,
     })
   })
 
@@ -44,9 +46,9 @@ describe('desktop auto-update environment', () => {
       environment: 'test', channel: 'nightly',
       target: 'mac-arm64',
       origin: 'https://desktop-updates.example.com',
-      publicUrl: `https://desktop-updates.example.com/dsh-desk/${RELEASE_ID}/feeds/mac-arm64/`,
-      keyPrefix: `dsh-desk/${RELEASE_ID}/feeds/mac-arm64`,
-      binaryKeyPrefix: `dsh-desk/${RELEASE_ID}/bin/mac-arm64`,
+      publicUrl: `https://desktop-updates.example.com/copera-code/${RELEASE_ID}/mac-arm64/`,
+      keyPrefix: `copera-code/${RELEASE_ID}/mac-arm64`,
+      binaryKeyPrefix: `copera-code/${RELEASE_ID}/mac-arm64`,
     })
     expect(resolveDesktopUploadConfig({
       DOWNLOAD_TEST_ORIGIN: 'https://desktop-updates.example.com/',
@@ -66,8 +68,9 @@ describe('desktop auto-update environment', () => {
     }, 'win32', 'x64')).toMatchObject({
       environment: 'production',
       target: 'win-x64',
-      publicUrl: 'https://download.deepseek.com/dsh-desk/feeds/win-x64/',
-      binaryKeyPrefix: 'dsh-desk/bin/win-x64',
+      publicUrl: 'https://desktop.copera.io/copera-code/win-x64/',
+      keyPrefix: 'copera-code/win-x64',
+      binaryKeyPrefix: 'copera-code/win-x64',
     })
     expect(resolveDesktopUploadConfig({
       DSH_DESKTOP_AUTO_UPDATE_ENV: 'production',
@@ -126,15 +129,29 @@ it.each([
   ['mac-x64', 'dsh-latest-macos-x64.dmg'],
   ['win-x64', 'dsh-latest-windows-x64.exe'],
 ] as const)('uses the production origin for website target %s', (target, filename) => {
-  expect(desktopWebsiteInstallerUrl(target)).toBe(`https://download.deepseek.com/desktop/${filename}`)
+  expect(desktopWebsiteInstallerUrl(target)).toBe(`https://desktop.copera.io/desktop/${filename}`)
 })
 
 it.each([['darwin', 'arm64', 'mac-arm64', 'stable-mac.yml'], ['darwin', 'x64', 'mac-x64', 'stable-mac.yml'], ['win32', 'x64', 'win-x64', 'stable.yml']] as const)
-('routes stable metadata and binaries separately for %s %s', (platform, arch, target, filename) => {
+('routes stable metadata and binaries into one target folder for %s %s', (platform, arch, target, filename) => {
   const config = resolveDesktopAutoUpdateConfig({ DSH_DESKTOP_AUTO_UPDATE_ENV: 'production', DSH_DESKTOP_UPDATE_CHANNEL: 'stable' }, platform, arch)
   expect(config.channel).toBe('stable')
-  expect(config.keyPrefix).toBe(`dsh-desk/feeds/${target}`)
-  expect(config.binaryKeyPrefix).toBe(`dsh-desk/bin/${target}/stable`)
+  // COPERA: the channel YAML and its binaries share one folder; electron-builder's relative URLs resolve inside it.
+  expect(config.keyPrefix).toBe(`copera-code/${target}`)
+  expect(config.binaryKeyPrefix).toBe(`copera-code/${target}`)
   expect(desktopUpdateMetadataFilename('1.0.0', platform, config.channel)).toBe(filename)
   expect(() => resolveDesktopAutoUpdateConfig({ DSH_DESKTOP_UPDATE_CHANNEL: 'latest' }, platform, arch)).toThrow(/channel/u)
+})
+
+// COPERA: the feed every Copera Code release embeds (production, stable) for Apple silicon.
+it('resolves the production mac-arm64 stable feed to its single target folder', () => {
+  expect(resolveDesktopAutoUpdateConfig({ DSH_DESKTOP_AUTO_UPDATE_ENV: 'production', DSH_DESKTOP_UPDATE_CHANNEL: 'stable' }, 'darwin', 'arm64')).toEqual({
+    environment: 'production',
+    channel: 'stable',
+    target: 'mac-arm64',
+    origin: 'https://desktop.copera.io',
+    publicUrl: 'https://desktop.copera.io/copera-code/mac-arm64/',
+    keyPrefix: 'copera-code/mac-arm64',
+    binaryKeyPrefix: 'copera-code/mac-arm64',
+  })
 })

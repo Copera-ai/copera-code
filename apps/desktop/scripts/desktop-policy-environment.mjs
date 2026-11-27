@@ -10,6 +10,18 @@ function origin(value, name) {
   return url.origin
 }
 
+// COPERA: Copera Code has no policy service, so a build embeds a policy only when its settings name one.
+const POLICY_SETTINGS = ['DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN', 'DSH_DESKTOP_MANDATORY_UPDATE_PROD_ORIGIN', 'DSH_DESKTOP_MANDATORY_UPDATE_CONFIG']
+
+/**
+ * Report whether release settings ask for a mandatory-update policy; any one setting makes the whole policy required.
+ * @param {NodeJS.ProcessEnv} environment File-owned release settings.
+ * @returns {boolean} Whether {@link resolveDesktopPolicyEnvironment} must run and its policy be embedded.
+ */
+export function desktopPolicyConfigured(environment) {
+  return POLICY_SETTINGS.some(name => environment[name] !== undefined && environment[name].trim() !== '')
+}
+
 /**
  * Resolve mandatory policy metadata before preparing artifacts or accessing signing hardware.
  * @param {NodeJS.ProcessEnv} environment File-owned release settings; the unselected origin is not required.

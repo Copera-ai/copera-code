@@ -1,3 +1,5 @@
+// COPERA: update objects use Copera Code's production origin (https://desktop.copera.io) and key prefix (copera-code/),
+// one folder per target holding the channel YAML and its files.
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { setImmediate } from 'node:timers/promises'
@@ -170,7 +172,7 @@ it('requires one signing preflight before building, then records only the comple
   }
   expect(writeFileSync).toHaveBeenCalledOnce()
   const record = JSON.parse(vi.mocked(writeFileSync).mock.calls[0]![1] as string) as { publicUrl: string }
-  expect(record.publicUrl).toBe('https://updates.example.com/dsh-desk/0123456789abcdef0123456789abcdef/feeds/win-x64/')
+  expect(record.publicUrl).toBe('https://updates.example.com/copera-code/0123456789abcdef0123456789abcdef/win-x64/')
 })
 
 it('initializes shared storage only after acquiring the preflight stage lock', async () => {

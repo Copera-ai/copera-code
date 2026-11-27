@@ -122,12 +122,32 @@ describe('Desktop auto-update switch', () => {
       expect(config.extraMetadata).toMatchObject({ dshDesktopUpdates: 'off' })
     })
 
-  it('keeps the upstream feed and policy requirements behind DSH_DESKTOP_UPDATES=on', () => {
+  it('embeds a mandatory-update policy only when DSH_DESKTOP_UPDATES=on and the settings name one', () => {
     const env = { DSH_DESKTOP_UPDATES: 'on', DSH_DESKTOP_TARGET_PLATFORM: 'win32', DSH_DESKTOP_TARGET_ARCH: 'x64', DSH_DESKTOP_UNSIGNED: '1' }
-    expect(() => createElectronBuilderConfig(env, 'win32', 'x64')).toThrow('DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN')
+    const withoutPolicy = createElectronBuilderConfig(env, 'win32', 'x64')
+    // COPERA: an unsigned build embeds no feed, so its manifest records updates off even with the switch on.
+    expect(withoutPolicy.extraMetadata.dshDesktopUpdates).toBe('off')
+    expect(withoutPolicy.extraMetadata).not.toHaveProperty('dshMandatoryUpdatePolicy')
+    expect(() => createElectronBuilderConfig({ ...env, DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: '{}' }, 'win32', 'x64'))
+      .toThrow('DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN')
     const config = createElectronBuilderConfig({ ...env, DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN: 'https://policy.example.com',
       DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: JSON.stringify({ allowedAuthOrigins: ['https://login.example.com'] }) }, 'win32', 'x64')
-    expect(config.extraMetadata).toMatchObject({ dshDesktopUpdates: 'on', dshMandatoryUpdatePolicy: { origin: 'https://policy.example.com' } })
+    expect(config.extraMetadata).toMatchObject({ dshDesktopUpdates: 'off', dshMandatoryUpdatePolicy: { origin: 'https://policy.example.com' } })
+  })
+
+  it.each([['darwin', 'arm64'], ['win32', 'x64']] as const)('records updates off in an unsigned %s %s manifest with the forced update settings', (platform, arch) => {
+    const config = createElectronBuilderConfig({ DSH_DESKTOP_UPDATES: 'on', DSH_DESKTOP_AUTO_UPDATE_ENV: 'production', DSH_DESKTOP_UPDATE_CHANNEL: 'stable',
+      DSH_DESKTOP_TARGET_PLATFORM: platform, DSH_DESKTOP_TARGET_ARCH: arch, DSH_DESKTOP_UNSIGNED: '1' }, platform, arch)
+    expect(config.publish).toBeNull()
+    expect(config.extraMetadata).toMatchObject({ dshDesktopUpdates: 'off', dshDesktopUpdateChannel: 'nightly' })
+  })
+
+  it('records updates on in a signed macOS manifest that embeds the production stable feed', () => {
+    const config = createElectronBuilderConfig({ ...MAC_SIGNING, APPLE_KEYCHAIN_PROFILE: 'release', DSH_DESKTOP_UPDATES: 'on',
+      DSH_DESKTOP_AUTO_UPDATE_ENV: 'production', DSH_DESKTOP_UPDATE_CHANNEL: 'stable',
+      DSH_DESKTOP_TARGET_PLATFORM: 'darwin', DSH_DESKTOP_TARGET_ARCH: 'arm64' }, 'darwin', 'arm64')
+    expect(config.publish).toEqual([{ provider: 'generic', url: 'https://desktop.copera.io/copera-code/mac-arm64/', channel: 'stable' }])
+    expect(config.extraMetadata).toMatchObject({ dshDesktopUpdates: 'on', dshDesktopUpdateChannel: 'stable' })
   })
 
   it.each([
@@ -145,7 +165,9 @@ describe('Desktop auto-update switch', () => {
       const signed = { ...MAC_SIGNING, APPLE_KEYCHAIN_PROFILE: 'release', CSC_LINK: p12, CSC_KEY_PASSWORD: '' }
       expect(() => { validateDesktopPackageEnvironment(signed, { platform: 'darwin', arch: 'arm64' }) }).not.toThrow()
       expect(() => { validateDesktopPackageEnvironment({ ...signed, DSH_DESKTOP_UPDATES: 'on' }, { platform: 'darwin', arch: 'arm64' }) })
-        .toThrow('DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN')
+        .toThrow('DOWNLOAD_TEST_ORIGIN')
+      const production = { ...signed, DSH_DESKTOP_UPDATES: 'on', DSH_DESKTOP_AUTO_UPDATE_ENV: 'production' }
+      expect(() => { validateDesktopPackageEnvironment(production, { platform: 'darwin', arch: 'arm64' }) }).not.toThrow()
     })
   })
 
@@ -154,21 +176,23 @@ describe('Desktop auto-update switch', () => {
       await writeFile(join(directory, '.env.windows'), readFileSync(new URL('../.env.windows.example', import.meta.url)))
       await writeFile(join(directory, '.env.macos'), readFileSync(new URL('../.env.macos.example', import.meta.url)))
       const windows = loadDesktopPackageEnvironment('win32', {}, directory, { unsigned: true })
-      expect(windows.DSH_DESKTOP_UPDATES).toBe('off')
+      // Packaging forces updates on; the templates carry no update setting.
+      expect(windows.DSH_DESKTOP_UPDATES).toBe('on')
       expect(() => { validateDesktopPackageEnvironment(windows, { platform: 'win32', arch: 'x64' }, { unsigned: true }) }).not.toThrow()
       expect(() => { validateDesktopPackageEnvironment(windows, { platform: 'win32', arch: 'x64' }) }).toThrow('DSH_DESKTOP_WINDOWS_CER_FILE')
       const mac = loadDesktopPackageEnvironment('darwin', {}, directory)
-      expect(mac.DSH_DESKTOP_UPDATES).toBe('off')
+      expect(mac.DSH_DESKTOP_UPDATES).toBe('on')
       expect(() => { validateDesktopPackageEnvironment(mac, { platform: 'darwin', arch: 'arm64' }) }).toThrow('DSH_DESKTOP_MACOS_SIGNING_IDENTITY')
     })
   })
 
-  it('reads the switch from the packaging settings file and ignores the shell environment', async () => {
+  it('forces the switch on over the packaging settings file and the shell environment', async () => {
     await withDirectory(async (directory) => {
-      await writeFile(join(directory, '.env.windows'), 'DSH_DESKTOP_UPDATES=on\n')
+      await writeFile(join(directory, '.env.windows'), 'DSH_DESKTOP_UPDATES=off\n')
       expect(loadDesktopPackageEnvironment('win32', { DSH_DESKTOP_UPDATES: 'off' }, directory).DSH_DESKTOP_UPDATES).toBe('on')
       await writeFile(join(directory, '.env.macos'), '\n')
-      expect(loadDesktopPackageEnvironment('darwin', { DSH_DESKTOP_UPDATES: 'on' }, directory)).not.toHaveProperty('DSH_DESKTOP_UPDATES')
+      expect(loadDesktopPackageEnvironment('darwin', { DSH_DESKTOP_UPDATES: 'off' }, directory).DSH_DESKTOP_UPDATES).toBe('on')
+      expect(localMacOSPackageEnvironment({ DSH_DESKTOP_UPDATES: 'on' })).not.toHaveProperty('DSH_DESKTOP_UPDATES')
     })
   })
 })

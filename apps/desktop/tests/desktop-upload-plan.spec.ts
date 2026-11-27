@@ -1,3 +1,5 @@
+// COPERA: update objects use Copera Code's production origin (https://desktop.copera.io) and key prefix (copera-code/),
+// with one folder per target holding the channel YAML and its binaries (no feeds/ or bin/ split, no stable/ subfolder).
 import { createHash } from 'node:crypto'
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -53,14 +55,14 @@ async function fixture(
   const base = `copera-code-${version}-${os}-${arch}`
   const origin = environment === 'test'
     ? TEST_ORIGIN
-    : 'https://download.deepseek.com'
+    : 'https://desktop.copera.io'
   await writeFile(join(artifactsRoot, `${target}-release.json`), `${JSON.stringify({
     schemaVersion: 1,
     channel,
     target,
     version,
     environment,
-    publicUrl: `${origin}/dsh-desk/${environment === 'test' ? `${RELEASE_ID}/` : ''}feeds/${target}/`,
+    publicUrl: `${origin}/copera-code/${environment === 'test' ? `${RELEASE_ID}/` : ''}${target}/`,
   })}\n`)
 
   if (os === 'mac') {
@@ -177,12 +179,18 @@ describe('desktop upload plan', () => {
       .rejects.toThrow(failure === 'checksum' ? /SHA-512/u : /completion record/u)
   })
 
-  it.each(['test', 'production'] as const)('isolates stable-channel packages from nightly in %s', async (environment) => {
+  // COPERA: both channels share the target folder; only the channel YAML separates them, so same-version nightly and
+  // stable binaries share keys. Copera Code releases only the stable channel.
+  it.each(['test', 'production'] as const)('separates stable-channel metadata from nightly in one target folder in %s', async (environment) => {
     const nightly = await createDesktopUploadPlan('win-x64', { ...await fixture('win-x64', '1.2.3', environment, 'nightly'), stagingPercentage: 10 })
     const stable = await createDesktopUploadPlan('win-x64', { ...await fixture('win-x64', '1.2.3', environment, 'stable'), stagingPercentage: 10 })
     expect(stable.artifacts.filter(file => file.channelMetadata).map(file => file.filename)).toEqual(['stable.yml'])
     expect(nightly.artifacts.filter(file => file.channelMetadata).map(file => file.filename)).toEqual(['nightly.yml'])
-    expect(stable.artifacts.every(file => !nightly.artifacts.some(other => other.key === file.key))).toBe(true)
+    const feedKey = (plan: typeof stable): string => plan.artifacts.find(file => file.channelMetadata)!.key
+    expect(feedKey(stable)).not.toBe(feedKey(nightly))
+    expect(feedKey(stable).slice(0, feedKey(stable).lastIndexOf('/'))).toBe(feedKey(nightly).slice(0, feedKey(nightly).lastIndexOf('/')))
+    expect(stable.artifacts.filter(file => !file.channelMetadata).map(file => file.key))
+      .toEqual(nightly.artifacts.filter(file => !file.channelMetadata).map(file => file.key))
     for (const plan of [nightly, stable]) {
       expect(plan.artifacts.find(file => file.channelMetadata)!.contents).toContain('stagingPercentage: 10')
     }
@@ -197,9 +205,9 @@ describe('desktop upload plan', () => {
         const feed = plan.artifacts.find(file => file.channelMetadata)!
         expect(feed.filename).toBe(target === 'win-x64' ? 'stable.yml' : 'stable-mac.yml')
         const payload = plan.artifacts.find(file => file.filename.endsWith(target === 'win-x64' ? '.exe' : '.zip'))!
-        expect(payload.key).toContain(`/bin/${target}/stable/`)
+        expect(payload.key).toBe(`${feed.key.slice(0, feed.key.lastIndexOf('/'))}/${payload.filename}`)
         expect(load(feed.contents!)).toMatchObject({ version, files: [{
-          url: `${environment === 'test' ? TEST_ORIGIN : 'https://download.deepseek.com'}/${payload.key}`,
+          url: `${environment === 'test' ? TEST_ORIGIN : 'https://desktop.copera.io'}/${payload.key}`,
         }] })
         summaries.push({ environment, version, keys: plan.artifacts.map(file => file.key) })
       }
@@ -211,14 +219,14 @@ describe('desktop upload plan', () => {
     const paths = await fixture('win-x64', '1.2.3', 'production')
     const plan = await createDesktopUploadPlan('win-x64', paths)
     expect(plan.artifacts.map(artifact => artifact.key)).toEqual([
-      'dsh-desk/bin/win-x64/copera-code-1.2.3-win-x64.exe',
-      'dsh-desk/bin/win-x64/copera-code-1.2.3-win-x64.exe.blockmap',
-      'dsh-desk/feeds/win-x64/nightly.yml',
+      'copera-code/win-x64/copera-code-1.2.3-win-x64.exe',
+      'copera-code/win-x64/copera-code-1.2.3-win-x64.exe.blockmap',
+      'copera-code/win-x64/nightly.yml',
     ])
     expect(load(plan.artifacts[2]!.contents!)).toMatchObject({
       version: '1.2.3',
       files: [{
-        url: 'https://download.deepseek.com/dsh-desk/bin/win-x64/copera-code-1.2.3-win-x64.exe',
+        url: 'https://desktop.copera.io/copera-code/win-x64/copera-code-1.2.3-win-x64.exe',
         sha512: digest('signed NSIS executable fixture'),
       }],
     })
@@ -231,7 +239,7 @@ describe('desktop upload plan', () => {
     expect(plan).toMatchObject({
       environment: 'test',
       version: '1.2.3',
-      publicUrl: `https://desktop-updates.example.com/dsh-desk/${RELEASE_ID}/feeds/mac-arm64/`,
+      publicUrl: `https://desktop-updates.example.com/copera-code/${RELEASE_ID}/mac-arm64/`,
       bucket: TEST_BUCKET,
     })
     expect(plan.artifacts.map(artifact => artifact.filename)).toEqual([
@@ -248,10 +256,10 @@ describe('desktop upload plan', () => {
   it.each(['mac-arm64', 'mac-x64', 'win-x64'] as const)('publishes every %s object and YAML reference inside the test release directory', async (target) => {
     const paths = await fixture(target)
     const plan = await createDesktopUploadPlan(target, paths)
-    const prefix = `dsh-desk/${RELEASE_ID}`
+    const prefix = `copera-code/${RELEASE_ID}`
     const payload = plan.artifacts.find(artifact => artifact.filename.endsWith(target === 'win-x64' ? '.exe' : '.zip'))!
     for (const artifact of plan.artifacts) {
-      expect(artifact.key).toBe(`${prefix}/${artifact.channelMetadata ? 'feeds' : 'bin'}/${target}/${artifact.filename}`)
+      expect(artifact.key).toBe(`${prefix}/${target}/${artifact.filename}`)
       if (artifact.channelMetadata) {
         expect(load(artifact.contents!)).toMatchObject({
           path: `${TEST_ORIGIN}/${payload.key}`,
@@ -293,7 +301,7 @@ describe('desktop upload plan', () => {
       'nightly.yml',
     ])
     expect(plan).toMatchObject({
-      publicUrl: 'https://download.deepseek.com/dsh-desk/feeds/win-x64/',
+      publicUrl: 'https://desktop.copera.io/copera-code/win-x64/',
       bucket: PRODUCTION_BUCKET,
     })
   })

@@ -1,3 +1,4 @@
+// COPERA: update objects use Copera Code's production origin (https://desktop.copera.io) and key prefix (copera-code/).
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { teo } from 'tencentcloud-sdk-nodejs-teo'
 import { purgeDesktopInstaller, resolveDesktopPurgeConfig } from '../scripts/desktop-edgeone.ts'
@@ -23,10 +24,10 @@ describe('production EdgeOne configuration', () => {
   })
 
   it('uses the upload plan URL verbatim and derives only cache-only destinations', () => {
-    const url = 'https://download.deepseek.com/changed/installer.dmg'
+    const url = 'https://desktop.copera.io/changed/installer.dmg'
     expect(resolveDesktopPurgeConfig(environment, 'mac-arm64', url).publicUrl).toBe(url)
-    expect(resolveDesktopPurgeConfig(environment, 'win-x64').publicUrl).toBe('https://download.deepseek.com/desktop/dsh-latest-windows-x64.exe')
-    expect(resolveDesktopPurgeConfig(environment, 'mac-x64').publicUrl).toBe('https://download.deepseek.com/desktop/dsh-latest-macos-x64.dmg')
+    expect(resolveDesktopPurgeConfig(environment, 'win-x64').publicUrl).toBe('https://desktop.copera.io/desktop/dsh-latest-windows-x64.exe')
+    expect(resolveDesktopPurgeConfig(environment, 'mac-x64').publicUrl).toBe('https://desktop.copera.io/desktop/dsh-latest-macos-x64.dmg')
   })
 })
 

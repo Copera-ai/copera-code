@@ -1,3 +1,4 @@
+// COPERA: the publisher's production origin is Copera Code's (https://desktop.copera.io).
 import { execFile, spawnSync } from 'node:child_process'
 import { createServer } from 'node:http'
 import { promisify } from 'node:util'
@@ -137,7 +138,7 @@ it('requires initial publication evidence and prepares approval without installe
     const config = join(f.root, 'config')
     await mkdir(join(config, 'publishing'), { recursive: true })
     await writeFile(join(config, 'publishing/production.json'), JSON.stringify({
-      bucket: 'bucket-123', origin: 'https://download.deepseek.com', credentialsFile: join(f.root, 'absent-secret'),
+      bucket: 'bucket-123', origin: 'https://desktop.copera.io', credentialsFile: join(f.root, 'absent-secret'),
       githubApp: { clientId: 'app', privateKeyFile: join(f.root, 'absent-key') },
     }))
     const route = { ...f.manifest.source, runnerLabel: 'dsh-runner' }
@@ -213,7 +214,7 @@ it.each(['apply', 'changed-approval', 'replaced-feed', 'website'] as const)('che
     await mkdir(join(config, 'publishing'), { recursive: true })
     await writeFile(credentialsFile, JSON.stringify({ secretId: 'fixture', secretKey: 'fixture' }))
     await writeFile(join(config, 'publishing/production.json'), JSON.stringify({
-      edgeOneZoneId: 'zone-fixture', bucket: 'bucket-123', origin: 'https://download.deepseek.com', credentialsFile,
+      edgeOneZoneId: 'zone-fixture', bucket: 'bucket-123', origin: 'https://desktop.copera.io', credentialsFile,
       githubApp: { clientId: 'app', privateKeyFile: join(f.root, 'absent-key') },
     }))
     const record = await createDesktopPublicationRecord(join(f.root, 'upload-records'), {
@@ -337,7 +338,8 @@ it('runs the real route CLI without gh and emits the selected route and preset',
 })
 
 // COPERA: the upload planner names Copera Code artifacts (product-identity.mjs) while the apps/desktop-publisher rollout
-// still expects the upstream artifact names; Copera Code v1 publishes no update feed, so this cross-app case is skipped.
+// still expects the upstream artifact names; Copera Code releases are uploaded by hand, not by the publisher rollout,
+// so this cross-app case is skipped.
 it.skip.each(['mac-arm64', 'win-x64'] as const)('accepts %s metadata produced by the original full upload planner', async (target) => {
   const f = await fixture(target)
   try {
@@ -369,7 +371,7 @@ it.each(['missing-yaml', 'wrong-approval', 'not-uploaded', 'wrong-zone', 'not-se
       await mkdir(join(config, 'publishing'), { recursive: true })
       await writeFile(credentialsFile, JSON.stringify({ secretId: 'fixture-id', secretKey: 'fixture-key' }))
       await writeFile(join(config, 'publishing/production.json'), JSON.stringify({
-        edgeOneZoneId: 'zone-fixture', bucket: 'bucket-123', origin: 'https://download.deepseek.com', credentialsFile,
+        edgeOneZoneId: 'zone-fixture', bucket: 'bucket-123', origin: 'https://desktop.copera.io', credentialsFile,
         githubApp: { clientId: 'app', privateKeyFile: join(f.root, 'absent-key') },
       }))
       if (scenario === 'wrong-zone') {

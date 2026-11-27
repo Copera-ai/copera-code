@@ -1,3 +1,4 @@
+// COPERA: update objects use Copera Code's production origin (https://desktop.copera.io) and key prefix (copera-code/).
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DesktopPurgeError, purgeDesktopInstaller } from '../scripts/desktop-edgeone.ts'
 import { createDesktopUploadPlan, type DesktopUploadPlan } from '../scripts/desktop-upload-plan.ts'
@@ -86,7 +87,7 @@ describe('cache-only submission command', () => {
     expect(uploadDesktopRelease).not.toHaveBeenCalled()
     expect(tagDesktopRelease).not.toHaveBeenCalled()
     expect(purgeDesktopInstaller).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-      publicUrl: 'https://download.deepseek.com/desktop/dsh-latest-macos-arm64.dmg',
+      publicUrl: 'https://desktop.copera.io/desktop/dsh-latest-macos-arm64.dmg',
     }))
   })
 

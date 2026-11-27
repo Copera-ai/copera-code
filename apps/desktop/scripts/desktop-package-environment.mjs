@@ -7,7 +7,7 @@ import { readDesktopPackageSettings as readSettings } from './desktop-file-setti
 import { resolveDesktopAppId, resolveMacOSNotarizationEnvironment, resolveMacOSSigningEnvironment, resolveNpmRegistry } from './desktop-release-environment.mjs'
 import { resolveDesktopAutoUpdateConfig } from '@deepseek-ai/dsh-desktop-publisher/desktop-auto-update-environment.mjs'
 import { createWindowsTokenSigner } from './windows-sign.mjs'
-import { resolveDesktopPolicyEnvironment } from './desktop-policy-environment.mjs'
+import { desktopPolicyConfigured, resolveDesktopPolicyEnvironment } from './desktop-policy-environment.mjs'
 import { validateMacOSSignatureCacheDirectory } from './macos-signature-cache-directory.mjs'
 import { resolveMacOSPackageSettings } from './macos-package-settings.mjs'
 import { resolveWindowsSignatureCacheDirectory } from './windows-signature-cache-directory.mjs'
@@ -98,9 +98,19 @@ export function loadDesktopPackageEnvironment(platform, environment = process.en
     ...Object.fromEntries(Object.entries(environment).filter(([name]) => !AMBIENT_RELEASE_SETTING.test(name))),
     ...settings,
     ...(environment.DSH_DESKTOP_UPDATE_CHANNEL === undefined ? {} : { DSH_DESKTOP_UPDATE_CHANNEL: environment.DSH_DESKTOP_UPDATE_CHANNEL }),
+    // COPERA: every Copera Code release updates from the production feed on the stable channel, whatever the settings
+    // file or shell say; unsigned builds embed no feed (electron-builder-config.mjs).
+    ...COPERA_RELEASE_UPDATE_SETTINGS,
     ...(preset === undefined ? {} : { DSH_PACKAGING_PRESET: preset }),
   }
 }
+
+/** COPERA: update settings of every Copera Code release; they replace any value from the settings file or shell. */
+const COPERA_RELEASE_UPDATE_SETTINGS = Object.freeze({
+  DSH_DESKTOP_UPDATES: 'on',
+  DSH_DESKTOP_AUTO_UPDATE_ENV: 'production',
+  DSH_DESKTOP_UPDATE_CHANNEL: 'stable',
+})
 
 function requireReadableFile(environment, name) {
   try {
@@ -123,9 +133,10 @@ export function validateDesktopPackageEnvironment(environment, target, options =
   resolveDesktopTargetBuildPaths(environment, target.platform, target.arch)
   resolveDesktopAppId(environment)
   resolveNpmRegistry(environment)
-  // COPERA: without auto-update (the product default) no build requires a policy origin or an update feed.
+  // COPERA: without auto-update (the product default) no build requires a policy origin or an update feed; with
+  // auto-update the policy is validated only when the settings name one.
   const updates = desktopUpdatesEnabled(environment)
-  if (updates && (target.platform !== 'darwin' || !options.unsigned)) resolveDesktopPolicyEnvironment(environment)
+  if (updates && desktopPolicyConfigured(environment) && (target.platform !== 'darwin' || !options.unsigned)) resolveDesktopPolicyEnvironment(environment)
   if (target.platform === 'darwin') resolveMacOSPackageSettings(environment)
   else resolveWindowsPackageSettings(environment)
   if (options.unsigned) return

@@ -19,20 +19,29 @@ The identity is fixed in `apps/desktop/scripts/product-identity.mjs`; packaging 
 
 `DSH_DESKTOP_APP_ID` is optional. Leave it unset; it exists only to give a test install its own reverse-DNS identity. The URL scheme needs no entitlement or signing change: it is an `Info.plist` entry, and sign-in does not use it (the OAuth redirect returns to the Host's loopback server at `http://127.0.0.1:<port>/oauth/callback`).
 
-## Auto-update is off
+## Auto-update
 
-`DSH_DESKTOP_UPDATES` switches the upstream auto-update path. It is a packaging setting read from `.env.macos` / `.env.windows` (never from the shell), `off` when unset.
+Every signed Copera Code build updates itself; there is no setting to turn it off. Copera Code uses the upstream updater unchanged: electron-updater with a generic provider, a check at launch and then every 10 minutes (with jitter; a window gaining focus or the computer resuming also checks once the interval has passed), a "Check for Updates…" menu item, and the in-window dialog that offers "Download update" and then "Install and Restart". `loadDesktopPackageEnvironment` in `apps/desktop/scripts/desktop-package-environment.mjs` forces `DSH_DESKTOP_UPDATES=on`, `DSH_DESKTOP_AUTO_UPDATE_ENV=production` and `DSH_DESKTOP_UPDATE_CHANNEL=stable` over any value from the settings file or the shell. Unsigned builds embed no feed and show no update menu.
 
-With `off`:
+The feed is served at `https://desktop.copera.io`, the host of the Copera Electron app's feed, in its own folder per target: `https://desktop.copera.io/copera-code/<target>/`, where `<target>` is `mac-arm64`, `mac-x64`, or `win-x64`. The folder holds the channel file and the files it names, exactly as packaging writes them: the channel file names the update by a relative URL. The origin and the `copera-code` prefix are fixed in `apps/desktop-publisher/src/desktop-auto-update-environment.mjs` (`DESKTOP_UPDATE_PRODUCTION_ORIGIN`, `DESKTOP_UPDATE_KEY_PREFIX`). The host's `latest/` folder belongs to the Copera Electron app; never put Copera Code files there.
 
-- No `app-update.yml` is written into the app, electron-builder `publish` is empty, and no `nightly*.yml` channel file is produced.
-- Neither signed nor unsigned builds require `DSH_DESKTOP_AUTO_UPDATE_ENV`, `DSH_DESKTOP_MANDATORY_UPDATE_*`, or `DOWNLOAD_*` settings, on macOS or Windows.
-- No mandatory-update policy is embedded, and signed builds write no update release record (`<target>-release.json`).
-- The packaged manifest records `dshDesktopUpdates: "off"`; the app then shows no "Check for Updates" menu item and runs no update or policy check.
+| Target | Feed the app reads | Files to upload into the folder |
+|---|---|---|
+| `mac-arm64` | `https://desktop.copera.io/copera-code/mac-arm64/stable-mac.yml` | `copera-code-<version>-mac-arm64.zip`, `.zip.blockmap`, `.dmg`, then `stable-mac.yml` |
+| `mac-x64` | `https://desktop.copera.io/copera-code/mac-x64/stable-mac.yml` | the same names with `mac-x64` |
+| `win-x64` | `https://desktop.copera.io/copera-code/win-x64/stable.yml` | `copera-code-<version>-win-x64.exe`, `.exe.blockmap`, then `stable.yml` |
 
-`DSH_DESKTOP_UPDATES=on` restores the upstream behaviour, including all of its required settings. The upstream update feed is DeepSeek's (`download.deepseek.com` in production), so `on` is not usable for Copera Code without new publication infrastructure.
+Copera has no mandatory-update policy service, so no build needs `DSH_DESKTOP_MANDATORY_UPDATE_*`; a build embeds the upstream policy only when one of those settings is present, and the app then runs without a policy check.
 
-On Windows, signed builds still derive the installer's `publisherName` from the signing certificate (`CN`, `O`, `C`); with updates off it has no effect at runtime.
+### Release flow
+
+1. Package signed as usual (`pnpm run package:desktop:mac:arm64`, `pnpm run package:desktop:win:x64`); no update setting is needed. The artifacts directory `apps/desktop/.desktop-build/targets/<target>/artifacts/` then holds the files of the table above.
+2. Upload them through the Copera admin into the target's folder `copera-code/<target>/`, the channel file (`stable-mac.yml` or `stable.yml`) last: until it is replaced, installed apps keep seeing the previous release. Files of earlier versions may stay; the channel file names the current one.
+3. Check the feed: `curl -fsS https://desktop.copera.io/copera-code/mac-arm64/stable-mac.yml` shows the new `version` and the ZIP name. Installed apps offer the release at their next check, within about 10 minutes.
+
+A build must carry a higher version than the one installed: the app accepts any newer semantic version on its channel, prereleases such as `0.2.3-alpha.3` included, and never downgrades. A build packaged before auto-update was on has no feed and never updates, so the first release with auto-update reaches its users only through a manual install.
+
+Every release of a target must keep its signing identity: on macOS the installed app accepts only an update signed by the same Developer ID team, and on Windows signed builds embed the installer's `publisherName`, derived from the signing certificate (`CN`, `O`, `C`), which electron-updater compares with the signature of every downloaded installer.
 
 ## What the package contains
 

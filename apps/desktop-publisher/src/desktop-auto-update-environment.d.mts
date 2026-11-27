@@ -1,6 +1,13 @@
 /** Environment variable that selects the Desktop update deployment. */
 export const DESKTOP_AUTO_UPDATE_ENV: 'DSH_DESKTOP_AUTO_UPDATE_ENV'
 
+// COPERA: Copera Code's update location.
+/** Production update origin: Cloudflare R2 behind a custom domain. */
+export const DESKTOP_UPDATE_PRODUCTION_ORIGIN: 'https://desktop.copera.io'
+
+/** Key prefix of every update object; the same bucket's `latest/` tree belongs to another application. */
+export const DESKTOP_UPDATE_KEY_PREFIX: 'copera-code'
+
 /** Supported Desktop update deployment. */
 export type DesktopAutoUpdateEnvironment = 'test' | 'production'
 

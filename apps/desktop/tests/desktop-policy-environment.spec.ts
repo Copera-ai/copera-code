@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { resolveDesktopPolicyEnvironment } from '../scripts/desktop-policy-environment.mjs'
+import { desktopPolicyConfigured, resolveDesktopPolicyEnvironment } from '../scripts/desktop-policy-environment.mjs' // COPERA: optional policy.
 import { validateDesktopPackageEnvironment } from '../scripts/desktop-package-environment.mjs'
 import { resolveDesktopPolicyConfig } from '../src/mandatory-update-policy.ts'
 
@@ -47,9 +47,10 @@ it('rejects login origins in production', () => {
     .toThrow('must not configure allowedAuthOrigins')
 })
 
-// COPERA: the policy requirement applies with DSH_DESKTOP_UPDATES=on; the product default needs no policy.
+// COPERA: the policy requirement applies with DSH_DESKTOP_UPDATES=on and at least one policy setting; Copera Code
+// has no policy service, so its builds name none.
 it.each([{ unsigned: true }, { prepareOnly: true }, {}])('requires policy outside local macOS builds in %j', (options) => {
-  const environment = { DSH_DESKTOP_APP_ID: 'com.example.test', DSH_DESKTOP_UPDATES: 'on' }
+  const environment = { DSH_DESKTOP_APP_ID: 'com.example.test', DSH_DESKTOP_UPDATES: 'on', DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: '{}' }
   for (const platform of ['win32', 'darwin'] as const) {
     if (platform === 'darwin' && options.unsigned) {
       expect(() => { validateDesktopPackageEnvironment(environment, { platform, arch: 'x64' }, options) })
@@ -59,4 +60,13 @@ it.each([{ unsigned: true }, { prepareOnly: true }, {}])('requires policy outsid
     expect(() => { validateDesktopPackageEnvironment(environment, { platform, arch: 'x64' }, options) })
       .toThrow('DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN')
   }
+})
+
+// COPERA: auto-update without any policy setting embeds and requires no policy.
+it.each([{ unsigned: true }, { prepareOnly: true }])('requires no policy without policy settings in %j', (options) => {
+  const environment = { DSH_DESKTOP_APP_ID: 'com.example.test', DSH_DESKTOP_UPDATES: 'on' }
+  expect(desktopPolicyConfigured(environment)).toBe(false)
+  expect(desktopPolicyConfigured({ ...environment, DSH_DESKTOP_MANDATORY_UPDATE_PROD_ORIGIN: ' ' })).toBe(false)
+  expect(desktopPolicyConfigured({ ...environment, DSH_DESKTOP_MANDATORY_UPDATE_PROD_ORIGIN: 'https://policy.example.com' })).toBe(true)
+  expect(() => { validateDesktopPackageEnvironment(environment, { platform: 'win32', arch: 'x64' }, options) }).not.toThrow()
 })

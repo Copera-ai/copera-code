@@ -66,10 +66,12 @@ it.each(['arm64', 'x64'])('records %s debugging artifact paths only for an expli
     await mkdir(join(root, 'presets'))
     await mkdir(join(root, 'secrets'))
     await writeFile(join(root, 'certificate.p12'), 'fixture')
+    // COPERA: packaging forces the production deployment over the preset's test selection, so the policy needs its
+    // production origin and production options (no allowedAuthOrigins).
     await writeFile(join(root, 'presets/test.env'), [
       'DSH_DESKTOP_APP_ID=com.example.fixture', 'DSH_DESKTOP_AUTO_UPDATE_ENV=test',
-      'DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN=https://policy.example.com',
-      'DSH_DESKTOP_MANDATORY_UPDATE_CONFIG={"allowedAuthOrigins":["https://login.example.com"]}',
+      'DSH_DESKTOP_MANDATORY_UPDATE_PROD_ORIGIN=https://policy.example.com',
+      'DSH_DESKTOP_MANDATORY_UPDATE_CONFIG={"allowedPageOrigins":["https://download.example.com"]}',
       'DOWNLOAD_TEST_ORIGIN=https://updates.example.com', 'DOWNLOAD_TEST_RELEASE_ID=0123456789abcdef0123456789abcdef',
     ].join('\n'))
     await writeFile(join(root, 'secrets/macos-signing.env'), [

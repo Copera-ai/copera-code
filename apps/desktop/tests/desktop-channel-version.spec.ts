@@ -1,3 +1,5 @@
+// COPERA: update objects use Copera Code's production origin (https://desktop.copera.io) and key prefix (copera-code/),
+// one folder per target holding the channel YAML and its files.
 import { readFileSync } from 'node:fs'
 import { expect, it } from 'vitest'
 import { desktopCiVersion } from '../scripts/desktop-ci-version.mjs'
@@ -37,7 +39,7 @@ it.each(['arm64', 'x64'] as const)('embeds stable in a prerelease macOS %s packa
     APPLE_KEYCHAIN_PROFILE: 'channel-test',
   }, 'darwin', arch)
   expect(config.extraMetadata).toMatchObject({ version, dshDesktopUpdateChannel: 'stable' })
-  expect(config.publish).toEqual([{ provider: 'generic', url: `https://download.deepseek.com/dsh-desk/feeds/mac-${arch}/`, channel: 'stable' }])
+  expect(config.publish).toEqual([{ provider: 'generic', url: `https://desktop.copera.io/copera-code/mac-${arch}/`, channel: 'stable' }])
 })
 
 it('accepts a stable prerelease in an unsigned Windows x64 configuration', () => {

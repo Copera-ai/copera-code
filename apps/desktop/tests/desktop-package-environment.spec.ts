@@ -12,6 +12,8 @@ const POLICY = { DSH_DESKTOP_UPDATES: 'on', DSH_DESKTOP_MANDATORY_UPDATE_TEST_OR
   DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: JSON.stringify({ allowedAuthOrigins: ['https://login.example.com'] }) }
 const RELEASE = { ...POLICY, DSH_DESKTOP_APP_ID: 'com.example.desktop', DOWNLOAD_TEST_ORIGIN: 'https://updates.example.com',
   DOWNLOAD_TEST_RELEASE_ID: '0123456789abcdef0123456789abcdef' }
+// COPERA: loadDesktopPackageEnvironment forces these update settings into every release environment.
+const FORCED_UPDATES = { DSH_DESKTOP_UPDATES: 'on', DSH_DESKTOP_AUTO_UPDATE_ENV: 'production', DSH_DESKTOP_UPDATE_CHANNEL: 'stable' }
 const MAC_IDENTITY = { DSH_DESKTOP_MACOS_SIGNING_IDENTITY: 'Example Company (TEAMID1234)', DSH_DESKTOP_MACOS_TEAM_ID: 'TEAMID1234' }
 
 async function withDirectory(action: (directory: string) => Promise<void>): Promise<void> {
@@ -100,7 +102,7 @@ describe('Desktop local packaging configuration', () => {
     await withDirectory(async (directory) => {
       await writeFile(join(directory, '.env.windows'), '')
       expect(loadDesktopPackageEnvironment('win32', { DSH_DESKTOP_PACKAGE_CACHE_DIR: directory }, directory))
-        .toEqual({ DSH_DESKTOP_PACKAGE_CACHE_DIR: directory })
+        .toEqual({ DSH_DESKTOP_PACKAGE_CACHE_DIR: directory, ...FORCED_UPDATES })
     })
   })
   it('selects macOS local defaults while excluding inherited release settings and retaining build networking', () => {
@@ -184,10 +186,12 @@ describe('Desktop local packaging configuration', () => {
         PATH: 'build-tools', DSH_DESKTOP_APP_ID: 'com.example.windows',
         DSH_DESKTOP_WINDOWS_TOKEN_PIN: ' #!$%&literal ',
         DSH_DESKTOP_WINDOWS_CER_FILE: join(directory, 'keys', 'public certificate.cer'),
+        ...FORCED_UPDATES,
       })
       expect(loadDesktopPackageEnvironment('darwin', parent, directory)).toEqual({
         PATH: 'build-tools', DSH_DESKTOP_APP_ID: 'com.example.mac', APPLE_KEYCHAIN_PROFILE: 'release',
         CSC_LINK: join(directory, 'keys/signing.p12'), CSC_KEY_PASSWORD: ' # literal ',
+        ...FORCED_UPDATES,
       })
       expect(parent.DSH_DESKTOP_WINDOWS_TOKEN_PIN).toBe('stale-pin')
       expect(parent.dsh_desktop_mandatory_update_config).toBe('stale-policy')
@@ -204,9 +208,11 @@ describe('Desktop local packaging configuration', () => {
       await writeFile(file, settings.replace(`DOWNLOAD_TEST_RELEASE_ID='${RELEASE.DOWNLOAD_TEST_RELEASE_ID}'\n`, ''))
       const missing = loadDesktopPackageEnvironment(platform, parent, directory)
       expect(missing.DOWNLOAD_TEST_RELEASE_ID).toBeUndefined()
+      // COPERA: the forced production deployment needs no test release ID; the policy now needs its production origin.
+      expect(missing.DSH_DESKTOP_AUTO_UPDATE_ENV).toBe('production')
       expect(() => {
         validateDesktopPackageEnvironment(missing, platform === 'win32' ? WINDOWS : MACOS)
-      }).toThrow(/DOWNLOAD_TEST_RELEASE_ID/u)
+      }).toThrow(/DSH_DESKTOP_MANDATORY_UPDATE_PROD_ORIGIN/u)
       expect(parent.DOWNLOAD_TEST_RELEASE_ID).toBe('a'.repeat(32))
     })
   })
@@ -221,9 +227,20 @@ describe('Desktop local packaging configuration', () => {
       await writeFile(join(directory, '.env.windows'), `${lines}DSH_DESKTOP_MANDATORY_UPDATE_CONFIG='${windowsPolicy}'\n`)
       await writeFile(join(directory, '.env.macos'), `${lines}DSH_DESKTOP_MANDATORY_UPDATE_CONFIG='${macPolicy}'\n`)
       const parent = { DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: 'stale-policy' }
-      expect(loadDesktopPackageEnvironment('win32', parent, directory)).toEqual({ ...origins, DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: windowsPolicy })
-      expect(loadDesktopPackageEnvironment('darwin', parent, directory)).toEqual({ ...origins, DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: macPolicy })
+      expect(loadDesktopPackageEnvironment('win32', parent, directory)).toEqual({ ...origins, DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: windowsPolicy, ...FORCED_UPDATES })
+      expect(loadDesktopPackageEnvironment('darwin', parent, directory)).toEqual({ ...origins, DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: macPolicy, ...FORCED_UPDATES })
       expect(parent).toEqual({ DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: 'stale-policy' })
+    })
+  })
+
+  // COPERA: every Copera Code release updates from production on stable, whatever the settings file or shell say.
+  it.each(['win32', 'darwin'] as const)('forces %s release update settings over the settings file and shell', async (platform) => {
+    await withDirectory(async (directory) => {
+      await writeFile(join(directory, platform === 'win32' ? '.env.windows' : '.env.macos'),
+        'DSH_DESKTOP_UPDATES=off\nDSH_DESKTOP_AUTO_UPDATE_ENV=test\n')
+      const parent = { DSH_DESKTOP_UPDATES: 'off', DSH_DESKTOP_AUTO_UPDATE_ENV: 'test', DSH_DESKTOP_UPDATE_CHANNEL: 'nightly' }
+      expect(loadDesktopPackageEnvironment(platform, parent, directory)).toMatchObject(FORCED_UPDATES)
+      expect(parent).toEqual({ DSH_DESKTOP_UPDATES: 'off', DSH_DESKTOP_AUTO_UPDATE_ENV: 'test', DSH_DESKTOP_UPDATE_CHANNEL: 'nightly' })
     })
   })
 
@@ -261,8 +278,9 @@ describe('Desktop local packaging configuration', () => {
   it('accepts unsigned macOS configuration without Apple or update policy settings while keeping release validation', () => {
     const local = localMacOSPackageEnvironment({})
     expect(() => { validateDesktopPackageEnvironment(local, MACOS, { unsigned: true }) }).not.toThrow()
+    // COPERA: without policy settings, a signed build with auto-update first requires the update feed.
     expect(() => { validateDesktopPackageEnvironment({ ...local, DSH_DESKTOP_UPDATES: 'on' }, MACOS) })
-      .toThrow('DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN')
+      .toThrow('DOWNLOAD_TEST_ORIGIN')
     expect(() => { validateDesktopPackageEnvironment(RELEASE, MACOS) }).toThrow('DSH_DESKTOP_MACOS_SIGNING_IDENTITY')
   })
 

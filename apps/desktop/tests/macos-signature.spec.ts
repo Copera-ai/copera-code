@@ -1,3 +1,5 @@
+// COPERA: update objects use Copera Code's production origin (https://desktop.copera.io) and key prefix (copera-code/),
+// one folder per target holding the channel YAML and its files.
 import { SHIPPED_LOCALE_IDS } from '../../../scripts/shipped-locales.ts'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -92,7 +94,7 @@ describe('desktop macOS release signature', () => {
       },
       publish: [{
         provider: 'generic',
-        url: 'https://desktop-updates.example.com/dsh-desk/0123456789abcdef0123456789abcdef/feeds/mac-arm64/',
+        url: 'https://desktop-updates.example.com/copera-code/0123456789abcdef0123456789abcdef/mac-arm64/',
         channel: 'nightly',
       }],
     })
