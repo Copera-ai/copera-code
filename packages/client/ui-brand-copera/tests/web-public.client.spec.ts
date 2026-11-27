@@ -8,7 +8,7 @@ const SYMBOL = new URL('../src/client/assets/copera-symbol.svg', import.meta.url
 describe('Web shell public identity', () => {
   it('serves the Copera symbol as the favicon in both color schemes', async () => {
     const symbol = await readFile(SYMBOL, 'utf8')
-    expect(symbol).toContain('#3463F3')
+    expect(symbol).toContain('#1B2440')
     expect(await readFile(new URL('favicon.svg', PUBLIC), 'utf8')).toBe(symbol)
     expect(await readFile(new URL('favicon-dark.svg', PUBLIC), 'utf8')).toBe(symbol)
   })

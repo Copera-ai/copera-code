@@ -14,7 +14,7 @@ export interface CoperaMarkProps {
 }
 
 /**
- * Render the Copera symbol: the white mark on its blue gradient tile, legible on both palettes.
+ * Render the Copera Code symbol: the white Copera mark with a terminal prompt on its midnight gradient tile, legible on both palettes.
  * The image is decorative because every host places it beside or inside a labeled element.
  * @param props - requested edge and optional host class.
  * @returns the symbol image.

@@ -145,8 +145,8 @@ it('ships fixed-color favicons selected by document media queries', async () => 
   const light = await readFile(join(DIST_ROOT, 'favicon.svg'), 'utf8')
   const dark = await readFile(join(DIST_ROOT, 'favicon-dark.svg'), 'utf8')
   expect(light).not.toContain('<style>')
-  // COPERA: both schemes use the Copera symbol, whose blue tile reads on either background.
-  expect(light).toContain('#3463F3')
+  // COPERA: both schemes use the Copera Code symbol, whose white mark reads on either background.
+  expect(light).toContain('#1B2440')
   expect(dark).toBe(light)
 })
 

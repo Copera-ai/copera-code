@@ -6,11 +6,12 @@
 <rect width="416" height="416" fill="white"/>
 <rect width="481.394" height="481.394" transform="translate(-32.6973 -32.6971)" fill="url(#paint0_linear_3818_33)"/>
 <g filter="url(#filter0_d_3818_33)">
-<path d="M368.445 169.469C350.942 99.4465 286.795 47.5156 210.34 47.5156C120.414 47.5156 47.5151 119.358 47.5151 207.98C47.5151 296.603 120.414 368.445 210.34 368.445C286.795 368.445 350.942 316.514 368.445 246.492H308.727C293.18 285.035 254.989 312.282 210.34 312.282C191.017 312.282 172.904 307.179 157.312 298.266C140.807 305.285 123.264 305.315 107.435 304.58L124.779 269.385C112.028 252.159 104.504 230.935 104.504 207.98C104.504 150.376 151.888 103.678 210.34 103.678C254.989 103.678 293.18 130.926 308.727 169.469H368.445Z" fill="white"/>
-<path d="M225.435 225.435C213.855 237.014 207.35 252.719 207.35 269.095C207.35 252.719 200.845 237.014 189.265 225.435C177.686 213.856 161.981 207.35 145.605 207.35C161.981 207.35 177.686 200.845 189.265 189.266C200.845 177.686 207.35 161.982 207.35 145.606C207.35 161.982 213.855 177.686 225.435 189.266C237.014 200.845 252.719 207.35 269.095 207.35C252.719 207.35 237.014 213.856 225.435 225.435Z" fill="white"/>
+<path d="M368.445 169.469C350.942 99.4465 286.795 47.5156 210.34 47.5156C120.414 47.5156 47.5151 119.358 47.5151 207.98C47.5151 296.603 120.414 368.445 210.34 368.445C286.795 368.445 350.942 316.514 368.445 246.492H308.727C293.18 285.035 254.989 312.282 210.34 312.282C191.017 312.282 172.904 307.179 157.312 298.266C140.807 305.285 123.264 305.315 107.435 304.58L124.779 269.385C112.028 252.159 104.504 230.935 104.504 207.98C104.504 150.376 151.888 103.678 210.34 103.678C254.989 103.678 293.18 130.926 308.727 169.469H368.445Z" fill="url(#cgrad)"/>
+<g fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"><path d="M158 172 L198 208 L158 244"/><path d="M214 246 H260"/></g>
 </g>
 </g>
 <defs>
+<linearGradient id="cgrad" x1="208" y1="47" x2="208" y2="369" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#E6ECFF"/></linearGradient>
 <filter id="filter0_d_3818_33" x="-6.24056" y="8.2017" width="428.441" height="428.441" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
 <feFlood flood-opacity="0" result="BackgroundImageFix"/>
 <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
@@ -22,8 +23,8 @@
 <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_3818_33" result="shape"/>
 </filter>
 <linearGradient id="paint0_linear_3818_33" x1="240.697" y1="0" x2="240.697" y2="481.394" gradientUnits="userSpaceOnUse">
-<stop stop-color="#3463F3"/>
-<stop offset="1" stop-color="#1E398D"/>
+<stop stop-color="#1B2440"/>
+<stop offset="1" stop-color="#070B16"/>
 </linearGradient>
 </defs>
 </svg>
