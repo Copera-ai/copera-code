@@ -8,7 +8,7 @@
 
 import { getDshRuntimeVersion, loadLayeredEnv, StartupError } from '@deepseek-ai/dsh-app-boot'
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
-import { parseDshArgs } from './args.ts'
+import { parseDshArgs, versionText } from './args.ts'
 import { reportStartupFailure } from './startup-diagnostics.ts'
 import type { RunProfileOptions } from './profile-boot.ts'
 
@@ -16,6 +16,12 @@ import type { RunProfileOptions } from './profile-boot.ts'
 export type RunCliOptions = Pick<RunProfileOptions, 'packageManager'> & {
   /** Permit plugin commands for Desktop's existing profile; reserved for its installed carrier. */
   manageDesktopProfile?: boolean
+  // COPERA: product commands run this CLI under their own name.
+  /** Command name for help and usage; a product command (`copera-code`) prints its own help. Defaults to `dsh`. */
+  binName?: string
+  // COPERA: product commands print their package version before the harness version.
+  /** Version of the product package that runs this CLI; `--version` prints it before the harness version. */
+  productVersion?: string
 }
 
 /**
@@ -25,8 +31,9 @@ export type RunCliOptions = Pick<RunProfileOptions, 'packageManager'> & {
  */
 export async function runCli(options: RunCliOptions = {}): Promise<void> {
   const version = getDshRuntimeVersion()
-  const { manageDesktopProfile, ...profileOptions } = options
-  const invocation = parseDshArgs(process.argv.slice(2), version, manageDesktopProfile)
+  // COPERA: binName selects the product command's help.
+  const { manageDesktopProfile, binName, productVersion, ...profileOptions } = options
+  const invocation = parseDshArgs(process.argv.slice(2), versionText(version, productVersion), manageDesktopProfile, binName)
 
   switch (invocation.mode) {
     case 'profile': {

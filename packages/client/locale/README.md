@@ -67,6 +67,22 @@ export function apply(ctx) {
 
 An external id is a non-empty ASCII BCP 47-style tag. Its fallback must already be registered, and the chain must terminate at `en`; unknown targets, duplicate ids, and cycles fail at registration. Lookup walks the fallback chain in the requested namespace, repeats it in `common`, then displays the key. Unloading a definition removes it from the selector and returns an active selection to the available browser/default locale.
 
+### Limiting the offered languages
+
+A deployment may set `languages` (selectable ids in display order; must include `en`) and `labels` (display names by id) on the `locale` row. The Host half validates them at load and publishes them to every index render as the `__DSH_LOCALE_CATALOG__` page global. The Language row then lists exactly those languages, a saved preference or browser language outside the list falls back to English, and `setLocale` rejects an unlisted id. Unlisted definitions stay registered as fallback-chain targets. Without either field the page carries no global and every registered language stays selectable under its own label.
+
+```yaml
+- id: locale
+  config:
+    languages: [en, pt]
+    labels:
+      pt: Português (Brasil)
+```
+
+### Overriding dictionary entries
+
+`ctx.locale.override(ns, language, entries)` layers replacement templates over one namespace in one locale and returns an idempotent disposer. Lookup consults the layers, newest first, before that locale's registered dictionary, then continues the fallback chain. A layer may arrive before or after the dictionary it covers and does not occupy the namespace's single registration seat.
+
 ### What the Host half does
 
 Every authenticated browser persists the preference through the Host settings service under the shared [settings scope policy](../ui-settings/README.md).

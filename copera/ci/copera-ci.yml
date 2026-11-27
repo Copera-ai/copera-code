@@ -1,0 +1,117 @@
+name: Copera CI
+
+# Copera Code's own CI. Upstream workflows target DeepSeek's self-hosted and
+# larger runners and secrets, so the fork disables them; the list and the
+# commands live in copera/docs/upstream-sync.md.
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - 'copera/**'
+
+permissions:
+  contents: read
+
+env:
+  # CI runs must never report to the production telemetry endpoint baked
+  # into apps/cli/cordis.yml (AppCLIEntry disables the row when set).
+  DSH_TELEMETRY_DISABLED: '1'
+
+# A new push to the same ref cancels the superseded run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: build, typecheck, lint, gates, Copera specs, pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      # Without a version input the action reads `packageManager` from package.json.
+      - uses: pnpm/action-setup@v5.0.0
+
+      # The Node 24 line upstream CI pins (ci.yml); `engines.node` also admits
+      # >=26.13.1, which would float to the newest major.
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '^24.22.3'
+          cache: pnpm
+
+      - name: Install (immutable)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Workspace constraints
+        run: pnpm run constraints
+
+      # Every hygiene gate must pass except `vendor rescope`, which also fails on
+      # the pristine upstream release 0.2.3-alpha.2 (two upstream files in
+      # apps/web/tests carry a pre-rescope name; see copera/docs/upstream-sync.md).
+      - name: Hygiene (all gates but vendor rescope)
+        shell: bash
+        run: |
+          set +e
+          pnpm run hygiene 2>&1 | tee hygiene.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if (( status == 0 )); then exit 0; fi
+          if ! grep -q '^run-gates: unsuccessful gates:' hygiene.log; then
+            echo 'copera-ci: hygiene stopped before its summary' >&2
+            exit "$status"
+          fi
+          others=$(sed -n '/^run-gates: unsuccessful gates:/,$p' hygiene.log | grep -E '^  - ' | grep -v ' FAILED vendor rescope (' || true)
+          if [[ -n "$others" ]]; then
+            printf 'copera-ci: hygiene gates failed:\n%s\n' "$others" >&2
+            exit 1
+          fi
+          echo 'copera-ci: only the upstream vendor rescope gate failed'
+
+      - name: Documentation gates
+        run: pnpm run doc-sync
+
+      - name: Locale gates
+        run: pnpm run check:i18n
+
+      # The glob matches only the Copera packages that exist on this ref:
+      # copera-app, llm-copera, copera-account, ui-brand-copera,
+      # ui-copera-account and copera-launch.
+      - name: Copera package specs
+        shell: bash
+        run: |
+          shopt -s nullglob
+          packages=(packages/*/*copera*/)
+          if (( ${#packages[@]} == 0 )); then
+            echo 'copera-ci: no Copera package matched packages/*/*copera*/' >&2
+            exit 1
+          fi
+          printf 'Copera packages: %s\n' "${packages[*]}"
+          pnpm exec vitest run "${packages[@]}"
+
+      # pack-npm builds again with the `copera` client profile before packing.
+      - name: Pack the npm package
+        run: pnpm exec tsx scripts/copera/pack-npm.ts --out dist/copera-npm
+
+      - name: Verify the packed package
+        shell: bash
+        run: |
+          shopt -s nullglob
+          tarballs=(dist/copera-npm/*.tgz)
+          if (( ${#tarballs[@]} != 1 )); then
+            echo "copera-ci: expected one tarball in dist/copera-npm, found ${#tarballs[@]}" >&2
+            exit 1
+          fi
+          pnpm exec tsx scripts/copera/verify-pack.ts --tarball "${tarballs[0]}"

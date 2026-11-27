@@ -17,6 +17,7 @@ const environment = {
   DSH_DESKTOP_MACOS_SIGNING_IDENTITY: 'Example Company (TEAMID1234)',
   DSH_DESKTOP_MACOS_TEAM_ID: 'TEAMID1234',
   APPLE_KEYCHAIN_PROFILE: 'fixture-profile',
+  DSH_DESKTOP_UPDATES: 'on',
   DOWNLOAD_TEST_ORIGIN: 'https://desktop-updates.example.com', DOWNLOAD_TEST_RELEASE_ID: '0123456789abcdef0123456789abcdef',
 }
 
@@ -26,18 +27,22 @@ function barrier() {
   return { promise, release }
 }
 
-async function fixture(arch: 'arm64' | 'x64' = 'arm64') {
+async function fixture(arch: 'arm64' | 'x64' = 'arm64', updates = true) {
   const root = await mkdtemp(join(tmpdir(), 'desktop-parallel-notarization-'))
   const artifactsRoot = join(root, 'artifacts')
-  const appPath = join(artifactsRoot, arch === 'arm64' ? 'mac-arm64' : 'mac', 'DeepSeek Harness.app')
+  const appPath = join(artifactsRoot, arch === 'arm64' ? 'mac-arm64' : 'mac', 'Copera Code.app')
   await mkdir(join(appPath, 'Contents', 'Resources'), { recursive: true })
   await writeFile(join(appPath, 'payload'), 'signed content')
-  await writeMacOSAppUpdateConfig(join(appPath, 'Contents', 'Resources'), {
-    publicUrl: `https://desktop-updates.example.com/dsh-desk/0123456789abcdef0123456789abcdef/feeds/mac-${arch}/`,
-  }, 'deepseek-harness-updater')
+  if (updates) {
+    await writeMacOSAppUpdateConfig(join(appPath, 'Contents', 'Resources'), {
+      publicUrl: `https://desktop-updates.example.com/dsh-desk/0123456789abcdef0123456789abcdef/feeds/mac-${arch}/`,
+    }, 'copera-code-updater')
+  }
   const version = '1.2.3-alpha.1'
-  const base = `deepseek-harness-${version}-mac-${arch}`
-  const request = { arch, artifactsRoot, version, environment }
+  const base = `copera-code-${version}-mac-${arch}`
+  const withoutUpdates = Object.fromEntries(Object.entries(environment)
+    .filter(([name]) => !/^(?:DSH_DESKTOP_UPDATES|DOWNLOAD_)/u.test(name)))
+  const request = { arch, artifactsRoot, version, environment: updates ? environment : withoutUpdates }
   const apple: MacOSArtifactOperations = {
     copyApp: async (source, destination) => {
       await cp(source, destination, { recursive: true, verbatimSymlinks: true })
@@ -57,13 +62,24 @@ async function fixture(arch: 'arm64' | 'x64' = 'arm64') {
     await writeFile(join(artifact.output, `${base}.${artifact.format}`), contents)
     if (artifact.format === 'zip') {
       await writeFile(join(artifact.output, `${base}.zip.blockmap`), 'blockmap')
-      await writeFile(join(artifact.output, 'nightly-mac.yml'), 'update metadata')
+      if (updates) await writeFile(join(artifact.output, 'nightly-mac.yml'), 'update metadata')
     }
   }
   return { root, appPath, request, apple, build, base }
 }
 
 describe('parallel macOS artifacts', () => {
+  // COPERA: Copera Code packages without auto-update by default: no app-update.yml and no channel metadata.
+  it('promotes the DMG, ZIP, and block map of a build without auto-update', async () => {
+    const f = await fixture('arm64', false)
+    try {
+      await packageMacOSArtifacts(f.request, f.build, f.apple)
+      expect((await readdir(f.request.artifactsRoot)).sort()).toEqual([`${f.base}.dmg`, `${f.base}.zip`, `${f.base}.zip.blockmap`, 'mac-arm64'])
+      expect(existsSync(join(f.appPath, 'Contents', 'Resources', 'app-update.yml'))).toBe(false)
+      expect(existsSync(join(f.appPath, 'ticket'))).toBe(true)
+    } finally { await rm(f.root, { recursive: true, force: true }) }
+  })
+
   it.each(['arm64', 'x64'] as const)('overlaps notarization on isolated %s copies and promotes only completed payloads', async (arch) => {
     const f = await fixture(arch)
     const appStarted = barrier()
@@ -196,7 +212,7 @@ describe('parallel macOS artifacts', () => {
   it('passes the actual App and isolated output directory to each single-target builder', () => {
     const target = resolveDesktopPackageTarget('mac-arm64', 'darwin', 'arm64')
     for (const format of ['zip', 'dmg'] as const) {
-      const appPath = join('private build', format, 'DeepSeek Harness.app')
+      const appPath = join('private build', format, 'Copera Code.app')
       const output = join(dirname(appPath), 'artifacts')
       expect(desktopElectronBuilderArguments(target, false, { format, appPath, output })).toEqual([
         'exec', 'electron-builder', '--config', 'electron-builder.config.mjs',

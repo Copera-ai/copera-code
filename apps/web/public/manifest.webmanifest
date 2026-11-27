@@ -1,11 +1,11 @@
 {
-  "name": "DeepSeek Harness",
-  "short_name": "DSH",
+  "name": "Copera Code",
+  "short_name": "Copera Code",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#050505",
+  "theme_color": "#050505",
   "icons": [
     {
       "src": "icon-192.png",

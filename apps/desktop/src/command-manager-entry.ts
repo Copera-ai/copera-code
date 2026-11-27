@@ -4,18 +4,31 @@ import { spawn } from 'node:child_process'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { CommandInstallationError, inspectFileCommand, installFileCommand, removeFileCommand } from './command-installation.ts'
+import { productIdentity } from '#product-identity'
 
 const [operation, expected] = process.argv.slice(2)
 const fingerprint = expected ?? ''
 const resources = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
+/**
+ * COPERA: Copera Code v1 offers no terminal command (its menu item is hidden): the bundled launcher runs the upstream
+ * dsh CLI, not the `copera-code` profile and environment mapping, so the worker only inspects.
+ * @param requested - Requested worker operation.
+ */
+function refuseCommandChanges(requested: string | undefined): void {
+  if (requested !== 'inspect') {
+    throw new CommandInstallationError('EUNSUPPORTED', `${productIdentity.productName} does not install a terminal command.`)
+  }
+}
+
 // This dedicated worker writes public command ownership metadata, not user secrets.
 if (process.platform === 'darwin') process.umask(0o022)
 
 try {
   if (!['inspect', 'install', 'remove'].includes(operation ?? '')) throw new CommandInstallationError('EINVAL', 'Invalid command-management operation.')
   if (operation !== 'inspect' && !/^[a-f0-9]{64}$/u.test(fingerprint)) throw new CommandInstallationError('EINVAL', 'Missing command confirmation.')
+  refuseCommandChanges(operation)
   if (process.platform === 'darwin') {
-    const options = { destination: '/usr/local/bin/dsh', launcher: join(resources, 'runtime', 'cli', 'bin', 'dsh'),
+    const options = { destination: `/usr/local/bin/${productIdentity.cliCommandName}`, launcher: join(resources, 'runtime', 'cli', 'bin', 'dsh'),
       linkHelper: join(resources, 'runtime', 'cli', 'link-entry') }
     const state = operation === 'inspect' ? await inspectFileCommand(options)
       : operation === 'install' ? await installFileCommand(options, fingerprint) : await removeFileCommand(options, fingerprint)

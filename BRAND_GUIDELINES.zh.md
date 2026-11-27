@@ -10,3 +10,9 @@
 - 此外，请您避免在宣传或展示时，以容易引起误解的方式使用官方品牌素材，以免让用户产生官方背书、合作或授权等不实印象。
 
 我们相信，一个清晰、有序的社区环境，能让每一位开发者的努力都更容易被看见和认可。对于少数不符合上述规范的情况，我们可能会联系相关方进行适当的调整，以维护生态整体的秩序。感谢大家的理解与支持，让我们一起构建一个更友好、更可持续发展的开源社区。
+
+## Copera Code 分叉
+
+本仓库是由 Copera 维护的分叉。Copera Code 是 Copera 基于 DeepSeek Harness（DSH）构建的独立产品，不是 DeepSeek Harness 官方产品，DeepSeek 不为其背书、赞助或运营。按照上述规范，Copera Code 不将“DeepSeek Harness”名称或 DeepSeek Harness 官方品牌素材用作产品名称或标识，仅以“基于 DeepSeek Harness（DSH）构建”说明二者关系。
+
+Copera 名称、Copera 标志以及 Copera Code 品牌素材归 Copera 所有。本仓库的 MIT 许可证不授予任何与之相关的权利。

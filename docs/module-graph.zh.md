@@ -13,6 +13,7 @@ flowchart TD
     pkg_atomic_write["atomic-write"]
     pkg_brand["brand"]
     pkg_chunked_list["chunked-list"]
+    pkg_copera_launch["copera-launch"]
     pkg_deque["deque"]
     pkg_error["error"]
     pkg_home_paths["home-paths"]
@@ -180,12 +181,14 @@ flowchart TD
     pkg_client_ui_agent_team["client-ui-agent-team"]
     pkg_client_ui_approval["client-ui-approval"]
     pkg_client_ui_attachment["client-ui-attachment"]
+    pkg_client_ui_brand_copera["client-ui-brand-copera"]
     pkg_client_ui_brand_official["client-ui-brand-official"]
     pkg_client_ui_chat["client-ui-chat"]
     pkg_client_ui_commands["client-ui-commands"]
     pkg_client_ui_connector_account["client-ui-connector-account"]
     pkg_client_ui_context_menu["client-ui-context-menu"]
     pkg_client_ui_conversation["client-ui-conversation"]
+    pkg_client_ui_copera_account["client-ui-copera-account"]
     pkg_client_ui_creation_recommendations["client-ui-creation-recommendations"]
     pkg_client_ui_deliverables["client-ui-deliverables"]
     pkg_client_ui_directory_picker_browse["client-ui-directory-picker-browse"]
@@ -846,6 +849,7 @@ flowchart TD
   pkg_fs_sandbox --> pkg_sandbox_policy
   pkg_copera_account --> pkg_credentials
   pkg_copera_account --> pkg_host_webserver
+  pkg_copera_account --> pkg_launch_environment
   pkg_copera_account --> pkg_llm_copera
   pkg_copera_account --> pkg_typert_protocol
   pkg_compaction --> pkg_commands
@@ -1659,6 +1663,7 @@ flowchart TD
 | --- | --- | --- |
 | [`brand`](../packages/util/brand) | `util` | — |
 | [`chunked-list`](../packages/util/chunked-list) | `util` | — |
+| [`copera-launch`](../packages/util/copera-launch) | `util` | — |
 | [`deque`](../packages/util/deque) | `util` | — |
 | [`error`](../packages/util/error) | `util` | — |
 | [`home-paths`](../packages/util/home-paths) | `util` | — |
@@ -1710,12 +1715,14 @@ flowchart TD
 | [`client-ui-agent-team`](../packages/client/ui-agent-team) | `client` | — |
 | [`client-ui-approval`](../packages/client/ui-approval) | `client` | — |
 | [`client-ui-attachment`](../packages/client/ui-attachment) | `client` | — |
+| [`client-ui-brand-copera`](../packages/client/ui-brand-copera) | `client` | — |
 | [`client-ui-brand-official`](../packages/client/ui-brand-official) | `client` | — |
 | [`client-ui-chat`](../packages/client/ui-chat) | `client` | — |
 | [`client-ui-commands`](../packages/client/ui-commands) | `client` | — |
 | [`client-ui-connector-account`](../packages/client/ui-connector-account) | `client` | — |
 | [`client-ui-context-menu`](../packages/client/ui-context-menu) | `client` | — |
 | [`client-ui-conversation`](../packages/client/ui-conversation) | `client` | — |
+| [`client-ui-copera-account`](../packages/client/ui-copera-account) | `client` | — |
 | [`client-ui-creation-recommendations`](../packages/client/ui-creation-recommendations) | `client` | — |
 | [`client-ui-deliverables`](../packages/client/ui-deliverables) | `client` | — |
 | [`client-ui-directory-picker-browse`](../packages/client/ui-directory-picker-browse) | `client` | — |
@@ -1929,7 +1936,7 @@ flowchart TD
 | [`tools`](../packages/core/tools) | `core` | [`agent`](../packages/core/agent), [`llm`](../packages/llm/llm), [`scope`](../packages/core/scope), [`session`](../packages/core/session), [`system-prompt`](../packages/core/system-prompt), [`user-approval`](../packages/interaction/user-approval) |
 | [`command-goal`](../packages/goal/command-goal) | `goal` | [`commands`](../packages/interaction/commands), [`goal`](../packages/goal/goal), [`llm`](../packages/llm/llm) |
 | [`fs-sandbox`](../packages/fs/fs-sandbox) | `fs` | [`fs`](../packages/fs/fs), [`fs-local`](../packages/fs/fs-local), [`sandbox`](../packages/sandbox/sandbox), [`sandbox-policy`](../packages/sandbox/sandbox-policy) |
-| [`copera-account`](../packages/account/copera-account) | `account` | [`credentials`](../packages/credentials/credentials), [`host-webserver`](../packages/host/webserver), [`llm-copera`](../packages/llm/llm-copera), [`typert-protocol`](../packages/typert/protocol) |
+| [`copera-account`](../packages/account/copera-account) | `account` | [`credentials`](../packages/credentials/credentials), [`host-webserver`](../packages/host/webserver), [`launch-environment`](../packages/util/launch-environment), [`llm-copera`](../packages/llm/llm-copera), [`typert-protocol`](../packages/typert/protocol) |
 | [`compaction`](../packages/compaction/compaction) | `compaction` | [`commands`](../packages/interaction/commands), [`llm`](../packages/llm/llm), [`session`](../packages/core/session) |
 | [`command-feedback`](../packages/feedback/command-feedback) | `feedback` | [`anonymous-user-id`](../packages/identity/anonymous-user-id), [`commands`](../packages/interaction/commands), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
 | [`permission-presets`](../packages/interaction/permission-presets) | `interaction` | [`agent`](../packages/core/agent), [`commands`](../packages/interaction/commands), [`sandbox`](../packages/sandbox/sandbox), [`sandbox-policy`](../packages/sandbox/sandbox-policy), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`shell`](../packages/shell/shell), [`typert-protocol`](../packages/typert/protocol), [`user-approval`](../packages/interaction/user-approval) |

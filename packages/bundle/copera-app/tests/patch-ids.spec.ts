@@ -74,6 +74,21 @@ function enabledRows(rows: Row[]): Row[] {
   return rows.filter(row => row.disabled !== true).flatMap(row => [row, ...enabledRows(children(row))])
 }
 
+/** Rows that mount for one profile name and platform, with every `!!js` `disabled` condition evaluated. */
+function mountedRowsFor(rows: Row[], profileName: string, platform: NodeJS.Platform): Row[] {
+  const ctx = { get: (name: string) => name === 'profileContext' ? { name: profileName } : undefined }
+  const isDisabled = (row: Row): boolean => {
+    const { disabled } = row
+    if (disabled === undefined || typeof disabled === 'boolean') return disabled === true
+    const source = (disabled as { __jsExpr: string }).__jsExpr
+    // Evaluates the bundle's own `!!js` condition with the Desktop profile context, as the Loader does.
+    // oxlint-disable-next-line typescript/no-implied-eval -- the condition source is the bundle's own patch file.
+    const condition = new Function('ctx', 'process', `return (${source})`) as (context: typeof ctx, proc: object) => unknown
+    return Boolean(condition(ctx, { platform, env: {} }))
+  }
+  return rows.filter(row => !isDisabled(row)).flatMap(row => [row, ...mountedRowsFor(children(row), profileName, platform)])
+}
+
 /** Every string inside a config value, including the source of `!!js` expressions. */
 function strings(value: unknown): string[] {
   if (typeof value === 'string') return [value]
@@ -92,7 +107,7 @@ const DISABLED_ROWS = [
   'llm-deepseek', 'llm-deepseek-account', 'llm-pi-ai', 'web-search-deepseek', 'web-deepseek-api',
   'ui-settings-account', 'ui-account-notifications', 'ui-settings-web-search', 'ui-settings-models',
   'ui-brand-official', 'harness-dev-context', 'upstream-skills', 'ui-plugin-manager', 'entry-customization',
-  'preset-cordis',
+  'preset-cordis', 'ui-settings-session-log',
 ]
 
 /** Packages whose source defaults or behavior call a DeepSeek-operated endpoint. */
@@ -139,6 +154,15 @@ describe('dsh-copera-app bundle', () => {
     expect(endpointPackages.map(row => row.id)).toEqual([])
   })
 
+  // Copera Code Desktop composes the same template under the profile name `desktop`
+  // (apps/desktop/tests/project-manager.spec.ts), which enables the Desktop-only rows.
+  it.each(['darwin', 'win32'] as const)('mounts no DeepSeek endpoint row in the Desktop composition on %s', (platform) => {
+    const mounted = mountedRowsFor(compose(PROFILE_TEMPLATES.copera!.bundles), 'desktop', platform)
+    expect(mounted.filter(row => strings(row.config).some(value => DEEPSEEK_ENDPOINT.test(value))).map(row => row.id)).toEqual([])
+    expect(mounted.filter(row => DEEPSEEK_ENDPOINT_PACKAGES.includes(row.name ?? '')).map(row => row.id)).toEqual([])
+    expect(mounted.map(row => row.id)).toEqual(expect.arrayContaining(['copera-account', 'llm-copera', 'ui-brand-copera', 'ui-copera-account']))
+  })
+
   it('mounts no enabled plugin_manager model tool, at host level or inside any preset', () => {
     const enabled = enabledRows(compose(PROFILE_TEMPLATES.copera!.bundles))
     expect(enabled.filter(row => row.name === PLUGIN_MANAGER_TOOLS).map(row => row.id)).toEqual([])
@@ -153,7 +177,7 @@ describe('dsh-copera-app bundle', () => {
     }
   })
 
-  it('routes the default model, session titles, persona, plugin sources, and theme to Copera values', () => {
+  it('routes the default model, session titles, persona, plugin sources, theme, startup label, and languages to Copera values', () => {
     const rows = compose(PROFILE_TEMPLATES.copera!.bundles)
     const config = (id: string): unknown => rows.find(row => row.id === id)?.config
     expect(config('agent-default-model')).toEqual({ provider: 'copera', model: 'shikai' })
@@ -164,6 +188,8 @@ describe('dsh-copera-app bundle', () => {
     })
     expect(config('plugin-manager')).toEqual({ fallbackRegistries: [], detailNpmFileSources: ['jsdelivr'] })
     expect(config('ui-theme')).toEqual({ preference: 'dark' })
+    expect(config('authentication-token')).toEqual({ cookieMaxAgeDays: 30, entryLabel: 'Copera Code' })
+    expect(config('locale')).toEqual({ languages: ['en', 'pt'], labels: { pt: 'Português (Brasil)' } })
   })
 
   // Loader patches replace a preset row's whole config, so the bundle restates each shipped preset. This

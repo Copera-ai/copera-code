@@ -29,6 +29,12 @@
 /deepseek-ai-dsh-client-locale/use-this-package/registering-a-language-pack:
   en: aa4e9c70523339cc
   zh: 3359eddc4e9ef15e
+/deepseek-ai-dsh-client-locale/use-this-package/limiting-the-offered-languages:
+  en: a3ee20d733c3240c
+  zh: 95c095ceabe64f98
+/deepseek-ai-dsh-client-locale/use-this-package/overriding-dictionary-entries:
+  en: 4e43cab8925a4076
+  zh: 1373dc40d55c0574
 /deepseek-ai-dsh-client-locale/use-this-package/what-the-host-half-does:
   en: 784035ca4b4838b8
   zh: 4a258795f408528f

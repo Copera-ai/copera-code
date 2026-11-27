@@ -47,14 +47,16 @@ it('rejects login origins in production', () => {
     .toThrow('must not configure allowedAuthOrigins')
 })
 
+// COPERA: the policy requirement applies with DSH_DESKTOP_UPDATES=on; the product default needs no policy.
 it.each([{ unsigned: true }, { prepareOnly: true }, {}])('requires policy outside local macOS builds in %j', (options) => {
+  const environment = { DSH_DESKTOP_APP_ID: 'com.example.test', DSH_DESKTOP_UPDATES: 'on' }
   for (const platform of ['win32', 'darwin'] as const) {
     if (platform === 'darwin' && options.unsigned) {
-      expect(() => { validateDesktopPackageEnvironment({ DSH_DESKTOP_APP_ID: 'com.example.test' }, { platform, arch: 'x64' }, options) })
+      expect(() => { validateDesktopPackageEnvironment(environment, { platform, arch: 'x64' }, options) })
         .not.toThrow()
       continue
     }
-    expect(() => { validateDesktopPackageEnvironment({ DSH_DESKTOP_APP_ID: 'com.example.test' }, { platform, arch: 'x64' }, options) })
+    expect(() => { validateDesktopPackageEnvironment(environment, { platform, arch: 'x64' }, options) })
       .toThrow('DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN')
   }
 })

@@ -117,6 +117,19 @@ describe('locale apply', () => {
   // (en); each test that reads localized copy stages its locale explicitly via
   // setLocale/Host preference instead of leaning on a dead browser pin.
 
+  it('limits the selectable languages to the catalog the Host page injects', async () => {
+    const b = await bench('zh')
+    vi.stubGlobal('__DSH_LOCALE_CATALOG__', { languages: ['en', 'pt'], labels: { pt: 'Português (Brasil)' } })
+    try {
+      await b.ctx.plugin({ inject: [...inject], apply }).await()
+      const locale = b.ctx.get('locale') as LocaleRuntime
+      expect(locale.getSnapshot().locales.map(l => [l.id, l.label])).toEqual([['en', 'English'], ['pt', 'Português (Brasil)']])
+      expect(locale.getSnapshot().active).toBe('en')
+    } finally {
+      await b.ctx.fiber.dispose()
+    }
+  })
+
   it('declares the slot service', () => {
     expect(inject).toEqual(['slots', 'remote', 'configForms'])
   })

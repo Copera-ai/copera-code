@@ -32,7 +32,7 @@ Choose it for the Copera Code product, where the `copera` model route needs a Co
 
 ### Minimal configuration
 
-The service has no Config. It reads two environment variables, which only the Copera Code launcher sets:
+The service has no Config. It reads two environment variables, which only the Copera Code launcher sets, from the inherited process environment only; a project or user `.env` file cannot set them:
 
 | Variable | Default | Meaning |
 |---|---|---|

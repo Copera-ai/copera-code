@@ -99,6 +99,49 @@ Examples:
   dsh plugin --profile tui add <package>    install a plugin into the tui profile
 `
 
+// COPERA: help of the products that run this launcher under their own command name and fixed profile.
+/** A product command that wraps this launcher with a fixed profile and prints its own help. */
+interface ProductHelp {
+  /** Program description shown under the usage line. */
+  description: string
+  /** Options and environment text shown after the description. */
+  text: string
+}
+
+// COPERA: the copera-code command; its launcher always selects the copera profile.
+/** Product help by command name; `dsh` itself is not listed. */
+const PRODUCT_HELP: Readonly<Record<string, ProductHelp>> = {
+  'copera-code': {
+    description: 'Copera Code: start the Copera Code web app on this computer.',
+    text: `
+Options:
+  --port <port>           listen port; 3080 by default, or a free port when 3080
+                          is busy; pass 0 to let the OS pick one
+  --host <host>           bind address: one IPv4 or IPv6 literal of a local
+                          interface
+  --no-open               do not open Copera Code in the default browser
+  -V, --version           output the version number
+  -h, --help              show this help
+
+Environment:
+  COPERA_CODE_HOME        data directory (default ~/.copera-code)
+  COPERA_CODE_TOKEN       Copera access token used instead of the stored sign-in
+  COPERA_CODE_API_ORIGIN  Copera API origin, https only (default https://api.copera.ai)
+`,
+  },
+}
+
+// COPERA: a product command prints its own version before the harness version.
+/**
+ * Text `--version` prints.
+ * @param harnessVersion - version of this dsh runtime.
+ * @param productVersion - version of the product package that wraps this launcher, when one does.
+ * @returns the harness version alone, or `<product> (harness <harness>)`.
+ */
+export function versionText(harnessVersion: string, productVersion?: string): string {
+  return productVersion === undefined ? harnessVersion : `${productVersion} (harness ${harnessVersion})`
+}
+
 /**
  * Resolve a boot or dump invocation from the launcher flags and the leftover
  * inner arguments.
@@ -141,20 +184,37 @@ function resolveBoot(program: Command, profile: string, options: BootOptions, ar
  * @param argv - arguments after the Node binary and script.
  * @param version - version string printed by `--version`.
  * @param manageDesktopProfile - permit Desktop's installed carrier to manage its reserved profile's plugins.
+ * @param binName - command name; a product command (`copera-code`) prints its own help for `-h` and has no `plugin`.
  * @returns the resolved invocation.
+ * @throws Error if `binName` is neither `dsh` nor a known product command.
  */
-export function parseDshArgs(argv: readonly string[], version: string, manageDesktopProfile = false): DshInvocation {
+export function parseDshArgs(
+  argv: readonly string[], version: string, manageDesktopProfile = false, binName = 'dsh',
+): DshInvocation {
+  // COPERA: a product command replaces the launcher's name, usage, description, and help.
+  const product = binName === 'dsh' ? undefined : PRODUCT_HELP[binName]
+  if (binName !== 'dsh' && product === undefined) throw new Error(`dsh: unknown command name ${JSON.stringify(binName)}`)
   const first = argv[0]
   let resolved: DshInvocation | undefined
   // Annotated, not inferred: the actions below call back into `program`, and an
   // inferred type would be circular through its own chain.
   const program: Command = new Command()
   program
-    .name('dsh')
+    .name(binName)
     .version(version, '-V, --version', 'output the version number')
-    .usage('[--profile] <name> [options] [app-args...]\n       dsh plugin --profile <name> <pnpm-args...>')
-    .description('dsh: boot a DeepSeek Harness profile — an ordered stack of plugin-bundle patch layers under your own overrides.')
-    .addHelpText('after', HELP_EXAMPLES)
+  if (product === undefined) {
+    program
+      .usage('[--profile] <name> [options] [app-args...]\n       dsh plugin --profile <name> <pnpm-args...>')
+      .description('dsh: boot a DeepSeek Harness profile — an ordered stack of plugin-bundle patch layers under your own overrides.')
+      .addHelpText('after', HELP_EXAMPLES)
+  } else {
+    program
+      .usage('[options]')
+      .description(product.description)
+      .addHelpText('after', product.text)
+      .configureHelp({ visibleOptions: () => [], visibleArguments: () => [] })
+  }
+  program
     .exitOverride()
     // The launcher's flags come first and end at the first token it does not
     // know; everything from there on belongs to the booted app, including
@@ -174,17 +234,21 @@ export function parseDshArgs(argv: readonly string[], version: string, manageDes
     .action((args: string[], options: BootOptions & { profile?: string }) => {
       // With the app owning -h, the launcher's own help is what a bare
       // `dsh -h` (no profile to hand it to) must print.
+      const helpRequested = args.some(argument => argument === '-h' || argument === '--help')
       if (options.profile === undefined) {
-        if (args.some(argument => argument === '-h' || argument === '--help')) program.help()
+        if (helpRequested) program.help()
         program.error('error: --profile <name> is required')
       }
+      // COPERA: a product command owns its help; the booted app's help names dsh and its profiles.
+      if (product !== undefined && helpRequested) program.help()
       const profile = options.profile
       if (profile === '') program.error('error: --profile needs a name')
       rejectElectronProfile(program, profile)
       resolved = resolveBoot(program, profile, options, args)
     })
 
-  if (first === 'plugin') {
+  // COPERA: a product command has no plugin management.
+  if (first === 'plugin' && product === undefined) {
     const plugin = program.command('plugin').description('manage a profile\'s plugins by forwarding the remaining arguments to pnpm in the profile directory')
     plugin
       // Commander copies the launcher's disabled help option into subcommands. The

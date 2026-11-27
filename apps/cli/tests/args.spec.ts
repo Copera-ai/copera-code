@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { parseDshArgs } from '../src/args.ts'
+import { parseDshArgs, versionText } from '../src/args.ts'
 
 const parse = (argv: string[], manageDesktopProfile = false) => parseDshArgs(argv, '1.2.3', manageDesktopProfile)
 
@@ -253,5 +253,57 @@ describe('parseDshArgs', () => {
     expect(stdout.mock.calls.map(([chunk]) => String(chunk)).join('')).not.toContain('help [command]')
     expect(exitCode(['-h'])).toBe(0)
     expect(exitCode(['--version'])).toBe(0)
+  })
+})
+
+// COPERA: the copera-code product command runs this parser under its own name.
+describe('parseDshArgs under a product command name', () => {
+  /** Run a product invocation that exits, returning its exit code and everything it printed. */
+  function productExit(argv: string[], version = '1.2.3'): { code: number; output: string } {
+    const exit = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit') })
+    const stdout = vi.spyOn(process.stdout, 'write').mockReturnValue(true)
+    const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true)
+    try {
+      parseDshArgs(argv, version, false, 'copera-code')
+      throw new Error(`expected ${JSON.stringify(argv)} to exit`)
+    } catch {
+      const output = [...stdout.mock.calls, ...stderr.mock.calls].map(([chunk]) => String(chunk)).join('')
+      return { code: exit.mock.calls.at(-1)?.[0] as number, output }
+    } finally {
+      vi.restoreAllMocks()
+    }
+  }
+
+  it('boots the selected profile like dsh', () => {
+    expect(parseDshArgs(['--profile', 'copera', '--port', '0'], '1.2.3', false, 'copera-code'))
+      .toEqual({ mode: 'profile', profile: 'copera', patches: [], args: ['--port', '0'] })
+  })
+
+  it.each([[['--profile', 'copera', '--help']], [['--profile', 'copera', '-h']], [['--help']]])(
+    'prints the product help for %j instead of the app help', (argv) => {
+      const { code, output } = productExit(argv)
+      expect(code).toBe(0)
+      expect(output).toContain('Usage: copera-code [options]')
+      expect(output).toContain('Copera Code')
+      expect(output).toContain('--no-open')
+      expect(output).not.toContain('DeepSeek Harness')
+      expect(output).not.toMatch(/\bdsh\b/)
+      expect(output).not.toContain('--profile')
+    })
+
+  it('has no plugin command', () => {
+    expect(productExit(['plugin', '--profile', 'copera', 'add', 'x']).code).toBe(1)
+  })
+
+  it('rejects an unknown command name', () => {
+    expect(() => parseDshArgs([], '1.2.3', false, 'other')).toThrow(/unknown command name/)
+  })
+
+  it('prints the product version before the harness version', () => {
+    expect(versionText('0.2.3-alpha.2', '0.1.0')).toBe('0.1.0 (harness 0.2.3-alpha.2)')
+    expect(versionText('0.2.3-alpha.2')).toBe('0.2.3-alpha.2')
+    const { code, output } = productExit(['--profile', 'copera', '--version'], versionText('0.2.3-alpha.2', '0.1.0'))
+    expect(code).toBe(0)
+    expect(output.trim()).toBe('0.1.0 (harness 0.2.3-alpha.2)')
   })
 })

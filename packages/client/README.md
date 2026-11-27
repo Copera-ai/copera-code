@@ -52,6 +52,8 @@ The kernel packages boot and serve the page; the UI feature packages present it.
 | [`resources/`](resources/README.md) | Unified resource model: protocol providers behind the `useResource` session standard hook | `ctx.resources` |
 | [`ui-sidebar-files/`](ui-sidebar-files/README.md) | The workspace files page and one workspace tree per pane beside docked and floating previews | — |
 | [`ui-brand-official/`](ui-brand-official/README.md) | Fills the generic browser-brand slots with the official name and marks | — |
+| [`ui-brand-copera/`](ui-brand-copera/README.md) | Fills the browser-brand slots with the Copera Code name and mark, stacks the Copera token layer and Inter, and overrides product-name copy | — |
+| [`ui-copera-account/`](ui-copera-account/README.md) | Presents the Copera sign-in screen and the sidebar account menu over `coperaAccount` | — |
 | [`ui-workspace/`](ui-workspace/README.md) | Provides workspace selection and creation surfaces | — |
 | [`ui-conversation/`](ui-conversation/README.md) | Presents the active conversation and its input surface | — |
 | [`ui-chat/`](ui-chat/README.md) | Projects and renders the Chat conversation target | — |

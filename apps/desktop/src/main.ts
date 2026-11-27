@@ -71,6 +71,15 @@ import { DesktopUpdateOverlays } from './update-overlay.ts'
 import { DesktopQuitConfirmation } from './quit-confirmation.ts'
 import { DesktopTray } from './tray.ts'
 import { DesktopBackgroundNotice } from './background-notice.ts'
+import { homedir } from 'node:os'
+import { productIdentity } from '#product-identity'
+import { applyDesktopProductEnvironment } from './product-environment.ts'
+
+// COPERA: map COPERA_CODE_* to the protected DSH_* names before any Desktop path resolves or the Host starts;
+// the Host and every recovery path inherit process.env. An invalid value is reported once main runs.
+let productEnvironmentFailure: Error | undefined
+try { applyDesktopProductEnvironment(process.env, homedir()) }
+catch (error) { productEnvironmentFailure = error instanceof Error ? error : new Error(String(error)) }
 
 let focusPrimaryWindow = (): void => {}
 let stopForRecovery = async (): Promise<void> => { await stopOperationReports() }
@@ -379,6 +388,7 @@ function createWindow(preload: string, show = false, primary = false): BrowserWi
 }
 
 async function main(): Promise<void> {
+  if (productEnvironmentFailure !== undefined) throw productEnvironmentFailure // COPERA: invalid COPERA_CODE_* value.
   const desktopSettings = await readDesktopSettings(app.getPath('userData'))
   void pruneCrashReports(app.getPath('logs'))
   const journalDirectory = process.env.DSH_DESKTOP_UPDATE_JOURNAL_DIR
@@ -701,6 +711,9 @@ async function main(): Promise<void> {
   }
 
   const manifest: unknown = JSON.parse(await readFile(join(app.getAppPath(), 'package.json'), 'utf8'))
+  // COPERA: a package built with DSH_DESKTOP_UPDATES=off records it; such a build offers and runs no update check.
+  const updatesEnabled = !(typeof manifest === 'object' && manifest !== null && 'dshDesktopUpdates' in manifest
+    && manifest.dshDesktopUpdates === 'off')
   const packagedChannel = desktopUpdateChannel(manifest)
   const channelSettings = new DesktopUpdateSettings(app.getPath('userData'), packagedChannel)
   const initialChannel = await channelSettings.load()
@@ -966,6 +979,7 @@ async function main(): Promise<void> {
   })
   ipcMain.handle(DESKTOP_IPC.updatesOpen, async (event) => {
     assertProductSender(event)
+    if (!updatesEnabled) return // COPERA: no update prompt without auto-update.
     await openUpdatePrompt()
   })
 
@@ -1152,7 +1166,7 @@ async function main(): Promise<void> {
 
   const automaticCheck = (): void => {
     if (!quitting) void mandatoryPolicy?.check('foreground-or-resume').catch((error: unknown) => { console.error(error) })
-    if (!quitting) void updateSchedule.check().catch((error: unknown) => { console.error(error) })
+    if (!quitting && updatesEnabled) void updateSchedule.check().catch((error: unknown) => { console.error(error) })
   }
   powerMonitor.on('resume', automaticCheck)
   app.on('will-quit', () => {
@@ -1164,7 +1178,7 @@ async function main(): Promise<void> {
   const applicationIconPath = development ? join(app.getAppPath(), 'resources', 'icon-windows.png')
     : join(process.resourcesPath, 'icon.png')
   app.setAboutPanelOptions({
-    applicationName: 'DeepSeek Harness',
+    applicationName: productIdentity.productName, // COPERA: product name.
     applicationVersion: app.getVersion(),
     // The release has no separate build number; omit Electron's bundle version.
     version: '',
@@ -1217,9 +1231,9 @@ async function main(): Promise<void> {
     shortcuts.settingsMenuItem(currentDesktopLocale().messages.settingsMenu,
       enteredWorkspace && !isMandatory(), () => { focusPrimaryWindow() }),
     { type: 'separator' },
-    { label: currentDesktopLocale().messages.checkUpdatesMenu, click: () => { void openUpdatePrompt(true) } },
-    ...process.platform === 'darwin' || process.platform === 'win32'
-      ? [{ label: currentDesktopLocale().messages.cliCommandMenu, click: () => { void commandManager.show() } }] : [],
+    // COPERA: the update item exists only with auto-update; v1 installs no terminal command, so the
+    // "Manage dsh Command" item is not offered (commandManager stays constructed for the update-install wait).
+    ...updatesEnabled ? [{ label: currentDesktopLocale().messages.checkUpdatesMenu, click: () => { void openUpdatePrompt(true) } }] : [],
     { type: 'separator' },
     ...development ? [
       { label: currentDesktopLocale().messages.reloadPageMenu, role: 'reload' as const },
@@ -1496,10 +1510,12 @@ async function main(): Promise<void> {
     window.focus()
   }
 
-  if (app.isPackaged || process.env.DSH_DESKTOP_DEV_APP === '1') app.setAsDefaultProtocolClient('dsh')
+  // COPERA: the Copera Code URL scheme from product-identity.mjs.
+  const openUrls = [`${productIdentity.protocolScheme}://open`, `${productIdentity.protocolScheme}://open/`]
+  if (app.isPackaged || process.env.DSH_DESKTOP_DEV_APP === '1') app.setAsDefaultProtocolClient(productIdentity.protocolScheme)
   app.on('open-url', (event, url) => {
     event.preventDefault()
-    if (url === 'dsh://open' || url === 'dsh://open/') focusPrimaryWindow()
+    if (openUrls.includes(url)) focusPrimaryWindow()
   })
 
   app.on('activate', (_event, hasVisibleWindows) => {

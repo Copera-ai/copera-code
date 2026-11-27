@@ -6,8 +6,7 @@
 #
 # A patch replaces the targeted row's whole `config`, so each override below
 # restates every key of the row it replaces. Patches cannot delete or reorder
-# rows. The Copera brand and sign-in screen rows are inserted by later Copera
-# layers.
+# rows.
 
 # ── telemetry and analytics ──────────────────────────────────────────────────
 
@@ -24,6 +23,10 @@
   disabled: true
 
 - id: session-log-deepseek
+  disabled: true
+
+# The settings page of the session-log upload, whose backend row is off above.
+- id: ui-settings-session-log
   disabled: true
 
 - id: plugin-package-inventory-deepseek
@@ -123,6 +126,19 @@
   config:
     preference: dark
 
+# The startup line names the product: `Copera Code: http://…`.
+- id: authentication-token
+  config:
+    cookieMaxAgeDays: 30
+    entryLabel: Copera Code
+
+# Copera Code language catalog: English and Brazilian Portuguese only.
+- id: locale
+  config:
+    languages: [en, pt]
+    labels:
+      pt: Português (Brasil)
+
 # ── Copera account and model route ──────────────────────────────────────────
 
 # copera-account signs in through the Host web server's `/oauth/callback` and
@@ -136,3 +152,16 @@
 
     - id: llm-copera
       name: '@deepseek-ai/dsh-llm-copera'
+
+# ── Copera brand and sign-in screen ─────────────────────────────────────────
+
+- insert:
+    # Sidebar and home artwork, the blue/near-black token layer, Inter, product
+    # copy overrides, and the brand mark of the sign-in screen.
+    - id: ui-brand-copera
+      name: '@deepseek-ai/dsh-client-ui-brand-copera'
+
+    # The full-window sign-in screen (web and desktop) and the sidebar account
+    # menu over the coperaAccount Remote namespace of copera-account.
+    - id: ui-copera-account
+      name: '@deepseek-ai/dsh-client-ui-copera-account'

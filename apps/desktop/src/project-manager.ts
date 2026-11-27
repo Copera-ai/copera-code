@@ -16,6 +16,7 @@ import {
 import { join } from 'node:path'
 import {
   DESKTOP_HOST_PACKAGE,
+  DESKTOP_REMOVED_DEPENDENCIES,
   desktopCorePackageOverrides,
   verifyDesktopCorePackageSet,
 } from './core-package-set.ts'
@@ -28,7 +29,8 @@ import { PROFILE_TEMPLATES, type ProfileTemplate } from '@deepseek-ai/dsh-offici
 const PROJECT_NAME = '@deepseek-ai/dsh-desktop-runtime'
 const DSH_PACKAGE = '@deepseek-ai/dsh'
 const CORE_BUILD_PACKAGE = '@deepseek-ai/dsh-subprocess-local'
-const WEB_PROFILE = PROFILE_TEMPLATES.web as ProfileTemplate
+// COPERA: the profile keeps the internal name `desktop` and composes the Copera Code bundles.
+const WEB_PROFILE = (PROFILE_TEMPLATES.copera ?? PROFILE_TEMPLATES.web) as ProfileTemplate
 const WORKSPACE_SETTINGS = 'nodeLinker: hoisted\nautoInstallPeers: false\n'
 function writeJson(path: string, value: unknown): void {
   writeFileSync(path, `${JSON.stringify(value, undefined, 2)}\n`, { mode: 0o600 })
@@ -143,7 +145,9 @@ export function createRuntimeProjectMetadata(projectDir: string, release: Deskto
   writeJson(join(projectDir, 'package.json'), manifest)
   writeFileSync(
     join(projectDir, 'pnpm-workspace.yaml'),
-    workspaceFile(desktopCorePackageOverrides(packageSet)),
+    // COPERA: pnpm `-` overrides remove the Computer Use dependencies from the materialized runtime.
+    workspaceFile({ ...desktopCorePackageOverrides(packageSet),
+      ...Object.fromEntries(DESKTOP_REMOVED_DEPENDENCIES.map(name => [name, '-'])) }),
     { mode: 0o600 },
   )
 }

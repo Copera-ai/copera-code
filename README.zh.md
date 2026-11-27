@@ -1,16 +1,16 @@
-# DeepSeek Harness
+# Copera Code
 
 [English](README.md) | 中文
 
-DeepSeek Harness（`dsh`）是由 [DeepSeek AI](https://deepseek.com) 开发的开源 agent harness（智能体框架）。
+Copera Code 是由 [Copera](https://app.copera.ai) 提供的 AI 编程智能体。它基于 DeepSeek AI 开发的开源 agent harness [DeepSeek Harness（DSH）](https://github.com/deepseek-ai/deepseek-harness) 构建，并通过你的 Copera 账号运行 Copera 的 Shikai 模型。
 
-它构建于**一切皆插件**的架构之上，由 [Cordis](https://github.com/cordiverse/cordis) 驱动，其设计参见论文 [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512)。
+Copera Code 是由 Copera 维护的独立产品，不是 DeepSeek Harness 的官方发行版，DeepSeek 不为其背书、赞助或运营。参见[品牌规范](BRAND_GUIDELINES.zh.md)。
 
-文档：[https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
+Copera 开发者文档：[https://developer.copera.ai](https://developer.copera.ai)
 
-## 开发者预览
+## 预览版
 
-DeepSeek Harness 处于 _开发者预览_ 阶段，正在快速迭代。**未来将出现破坏兼容性的变更。**
+Copera Code 处于预览阶段，版本之间可能出现破坏兼容性的变更。
 
 运行本项目前，请阅读[安全说明](SAFETY.zh.md)。
 
@@ -18,79 +18,58 @@ DeepSeek Harness 处于 _开发者预览_ 阶段，正在快速迭代。**未来
 
 ## 运行
 
-### 通过 `npm` 运行
+### 通过 `npm` 运行（即将推出）
 
-安装 `Node.js`，然后运行：
+npm 包尚未发布。发布后，安装 `Node.js`，然后运行：
 
 ```sh
-npx @deepseek-ai/dsh web
+npx @copera.ai/code
 ```
-
-该命令默认会在 `http://127.0.0.1:3080` 启动 Web UI，本机启动时还会用默认浏览器打开页面。通过 SSH 启动时只打印宿主机 URL，因为本地转发地址由 SSH 客户端或编辑器持有。传入 `--no-open` 可仅运行服务器而不打开浏览器。详见 [Web UI 指南](docs/user/guide/index.zh.md)。
 
 <a id="run-from-source"></a>
 
 ### 从源码运行
 
-如需从仓库源码运行：
+安装 `Node.js` 和启用 Corepack 的 `pnpm`（版本固定在 `package.json` 中），然后在仓库源码中运行：
 
 ```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
-cd deepseek-harness
+git clone https://github.com/Copera-ai/copera-code.git
+cd copera-code
 pnpm install
 pnpm run build
-pnpm dsh web
+pnpm copera-code
 ```
 
-`pnpm run build` 会准备仓库产物。`pnpm dsh web` 会直接使用这些已构建产物，不会重新构建。
+`pnpm run build` 会准备仓库产物。`pnpm copera-code` 会直接使用这些已构建产物，不会重新构建。
 
-## 社区与支持
+## 登录
 
-- 通过 [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions) 提交反馈或 bug 报告。
-- 为你的插件仓库添加 [`dsh-plugin`](https://github.com/topics/dsh-plugin) 话题，便于被发现。
-- 欢迎加入 DeepSeek Harness 企微群！扫描下方二维码填写入群问卷，小助手会定期发送入群邀请。
+选择 **Sign in with Copera**。浏览器会打开 Copera 页面请求授权，完成后返回 Copera Code。
 
-<table>
-  <thead>
-    <tr>
-      <th align="center">入群问卷</th>
-      <th align="center">微信公众号</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="center"><a href="https://trtgsjkv6r.feishu.cn/share/base/form/shrcnIt5twSVdLGD52KJBckGCgg"><img src="https://cdn.deepseek.com/harness/readme/community-wecom-survey.png" alt="DeepSeek Harness 入群问卷二维码" width="180" height="180"></a></td>
-      <td align="center"><img src="https://cdn.deepseek.com/harness/readme/community-wechat-official-account.png" alt="DeepSeek Harness 团队微信公众号二维码" width="180" height="180"></td>
-    </tr>
-  </tbody>
-</table>
+在无浏览器的无头或远程环境中，请创建一个具有 Shikai API 权限的 Copera 个人访问令牌，并在启动 Copera Code 前将其导出为 `COPERA_CODE_TOKEN`。请像对待密码一样对待该令牌：不要提交到仓库，也不要写入项目的 `.env` 文件。
 
-## 参与贡献
+## 数据与隐私
 
-参见 [CONTRIBUTING.md](CONTRIBUTING.zh.md)。
+Copera Code 将设置、登录凭证和会话保存在 `~/.copera-code` 中。设置 `COPERA_CODE_HOME` 可改用其他目录。Copera Code 不会读取或修改 DeepSeek Harness 安装的数据目录。
+
+此版本不发送任何遥测数据。
+
+## 语言
+
+界面提供英语和葡萄牙语（巴西）。
+
+## 与 DeepSeek Harness 的关系
+
+本仓库是 [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 的分叉。Copera 会定期合并上游变更；具体方式见[上游同步流程](copera/docs/upstream-sync.md)和[上游文件修改清单](copera/docs/upstream-edits.md)。
 
 ## 开发
 
-请先阅读[开发指南](docs/development.zh.md)与[架构文档](docs/architecture.zh.md)。
-
-`pnpm run dev:web` 会在一个终端里完成构建、启动，并在源码修改时重建 client bundle；`make help` 列出 Web 与 Desktop 对应的 Make target。完整表格见开发指南的「应用命令」一节。
+请先阅读[开发指南](docs/development.zh.md)与[架构文档](docs/architecture.zh.md)。参与贡献请遵循 [CONTRIBUTING.md](CONTRIBUTING.zh.md)。
 
 面向 agent：请遵循 [AGENTS.md](AGENTS.md)。
 
-## 引用
-
-```bibtex
-@misc{deepseek-harness2026,
-  title={DeepSeek Harness: Everything is a Plugin},
-  author={DeepSeek-AI},
-  year={2026},
-  publisher={GitHub},
-  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
-}
-```
-
 ## 许可证
 
-[MIT](LICENSE)
+[MIT](LICENSE)。Copera Code 保留上游许可证及其版权声明：Copyright (c) 2026 DeepSeek。
 
 第三方依赖及其许可证见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

@@ -1,6 +1,6 @@
-DeepSeek Harness
-DeepSeek Harness
-Welcome to DeepSeek Harness
+Copera Code
+Copera Code
+Welcome to Copera Code
 Build potential. Explore intelligence.
 Sign in
 Add API Key

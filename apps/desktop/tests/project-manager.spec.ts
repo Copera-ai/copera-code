@@ -3,7 +3,12 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resolveDesktopPaths } from '../src/paths.ts'
-import { DesktopProjectManager } from '../src/project-manager.ts'
+import { createRuntimeProjectMetadata, DesktopProjectManager } from '../src/project-manager.ts'
+import { DESKTOP_PACKAGE_SET_FILE, DESKTOP_PACKAGES_DIR } from '../src/core-package-set.ts'
+import { DESKTOP_HOST_PROTOCOL_VERSION } from '../src/host-protocol.ts'
+import { PROFILE_TEMPLATES } from '@deepseek-ai/dsh-official-bundles'
+import { createHash } from 'node:crypto'
+import * as yaml from 'js-yaml'
 import { readProfilePlugins } from '@deepseek-ai/dsh-app-boot'
 import { runtimeFixture } from './runtime-fixture.ts'
 
@@ -328,5 +333,41 @@ describe('desktop link-backend projections', () => {
     expect(existsSync(join(profile, '.dsh-module-fallback'))).toBe(false)
     expect(lstatSync(join(profile, 'node_modules', 'bridge'), { throwIfNoEntry: false })).toBeUndefined()
     expect(existsSync(join(target, 'package.json'))).toBe(true)
+  })
+})
+
+// COPERA: the Desktop profile keeps the internal name `desktop` and composes the Copera Code bundles.
+describe('Copera Code Desktop profile', () => {
+  it('initializes the profile with the copera template bundles', async () => {
+    const { manager } = setup()
+    await manager.applyRelease()
+    const manifest = JSON.parse(readFileSync(join(manager.paths.profile, 'package.json'), 'utf8')) as {
+      dsh: { profile: { bundles: string[] } }
+    }
+    expect(manifest.dsh.profile.bundles).toEqual(PROFILE_TEMPLATES.copera!.bundles)
+    expect(manifest.dsh.profile.bundles).toContain('@deepseek-ai/dsh-copera-app')
+  })
+
+  it('removes the Computer Use bundles from the materialized runtime and keeps every core package local', () => {
+    const root = temporaryRoot()
+    const version = '1.2.3'
+    const records = ['@deepseek-ai/dsh', '@deepseek-ai/dsh-desktop-host'].map((name) => {
+      const file = `${name.slice(1).replace('/', '-')}-${version}.tgz`
+      const body = Buffer.from(`${name} fixture`)
+      mkdirSync(join(root, DESKTOP_PACKAGES_DIR), { recursive: true })
+      writeFileSync(join(root, DESKTOP_PACKAGES_DIR, file), body)
+      return { name, version, file, bytes: body.byteLength, integrity: `sha512-${createHash('sha512').update(body).digest('base64')}` }
+    })
+    writeFileSync(join(root, DESKTOP_PACKAGE_SET_FILE), JSON.stringify({ schemaVersion: 1, packages: records }))
+    createRuntimeProjectMetadata(root, { schemaVersion: 1, version, hostProtocolVersion: DESKTOP_HOST_PROTOCOL_VERSION, nodeVersion: '24.22.3', pnpmVersion: '11.28.5' })
+    const workspace = yaml.load(readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8')) as { overrides: Record<string, string> }
+    expect(workspace.overrides).toEqual({
+      '@deepseek-ai/dsh': `file:./${DESKTOP_PACKAGES_DIR}/${records[0]!.file}`,
+      '@deepseek-ai/dsh-cua-bundle': '-',
+      '@deepseek-ai/dsh-cua-mcp': '-',
+      '@deepseek-ai/dsh-desktop-host': `file:./${DESKTOP_PACKAGES_DIR}/${records[1]!.file}`,
+    })
+    const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { dsh: { profile: { bundles: string[] } } }
+    expect(manifest.dsh.profile.bundles).toEqual(PROFILE_TEMPLATES.copera!.bundles)
   })
 })

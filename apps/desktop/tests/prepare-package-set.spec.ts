@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { globSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import * as yaml from 'js-yaml'
 import { DESKTOP_HOST_RUNTIME_FILES, DESKTOP_PACKAGES_DIR } from '../src/core-package-set.ts'
 import {
   assertDesktopHostPackageFiles,
@@ -99,24 +100,25 @@ describe('desktop package-set selection', () => {
   })
 })
 
-const macProvider = '@deepseek-ai/dsh-cua-macos'
-const cuaBundle = '@deepseek-ai/dsh-cua-bundle'
+// COPERA: Computer Use is omitted from the Copera Code runtime, so the platform-selection fixtures use neutral names.
+const macProvider = '@deepseek-ai/dsh-native-macos'
+const cuaBundle = '@deepseek-ai/dsh-native-bundle'
 const targetManifests = () => new Map<string, PackedDesktopPackage>([
   ['@deepseek-ai/dsh', packed('@deepseek-ai/dsh', { dependencies: { [cuaBundle]: '1.0.0' } })],
   ['@deepseek-ai/dsh-desktop-host', packed('@deepseek-ai/dsh-desktop-host')],
   [cuaBundle, packed(cuaBundle, {
-    optionalDependencies: { [macProvider]: '1.0.0' }, dependencies: { '@deepseek-ai/dsh-cua': '1.0.0' },
+    optionalDependencies: { [macProvider]: '1.0.0' }, dependencies: { '@deepseek-ai/dsh-native': '1.0.0' },
   })],
-  ['@deepseek-ai/dsh-cua', packed('@deepseek-ai/dsh-cua')],
+  ['@deepseek-ai/dsh-native', packed('@deepseek-ai/dsh-native')],
   [macProvider, packed(macProvider, { os: ['darwin'] })],
 ])
 
 it.each([
   ['darwin', 'arm64', true], ['darwin', 'x64', true], ['win32', 'x64', false],
-] as const)('selects the CUA native tarball for target %s/%s independently of the host', (platform, arch, included) => {
+] as const)('selects the platform-native tarball for target %s/%s independently of the host', (platform, arch, included) => {
   const selected = selectDesktopPackageClosure(targetManifests(), { platform, arch }).map(entry => entry.manifest.name)
   expect(selected.includes(macProvider)).toBe(included)
-  expect(selected).toContain('@deepseek-ai/dsh-cua')
+  expect(selected).toContain('@deepseek-ai/dsh-native')
   expect(selected).toContain(cuaBundle)
 })
 
@@ -157,8 +159,38 @@ it('copies no macOS tarball into the Windows package set', () => {
   }
   const output = join(root, 'output')
   prepareDesktopPackageSet([inputs], output, { platform: 'win32', arch: 'x64' })
-  expect(readdirSync(join(output, DESKTOP_PACKAGES_DIR))).not.toContain('dsh-cua-macos.tgz')
+  expect(readdirSync(join(output, DESKTOP_PACKAGES_DIR))).not.toContain('dsh-native-macos.tgz')
   prepareDesktopPackageSet([inputs], output, { platform: 'darwin', arch: 'arm64' })
-  expect(readFileSync(join(output, DESKTOP_PACKAGES_DIR, 'dsh-cua-macos.tgz')))
-    .toEqual(readFileSync(join(inputs, 'dsh-cua-macos.tgz')))
+  expect(readFileSync(join(output, DESKTOP_PACKAGES_DIR, 'dsh-native-macos.tgz')))
+    .toEqual(readFileSync(join(inputs, 'dsh-native-macos.tgz')))
+})
+
+// COPERA: the packaged runtime of Copera Code carries the Copera product packages and no Computer Use bundle.
+describe('Copera Code packaged runtime closure', () => {
+  const repository = join(import.meta.dirname, '..', '..', '..')
+  function workspacePackages(): Map<string, PackedDesktopPackage> {
+    const workspace = yaml.load(readFileSync(join(repository, 'pnpm-workspace.yaml'), 'utf8')) as { packages: string[] }
+    const patterns = workspace.packages.map(pattern => `${pattern}/package.json`)
+    const available = new Map<string, PackedDesktopPackage>()
+    for (const path of globSync(patterns, { cwd: repository })) {
+      const manifest = JSON.parse(readFileSync(join(repository, path), 'utf8')) as Record<string, unknown> & { name: string }
+      available.set(manifest.name, { tarball: `${path}.tgz`, manifest })
+    }
+    return available
+  }
+
+  it.each([['darwin', 'arm64'], ['darwin', 'x64'], ['win32', 'x64']] as const)('selects the Copera packages and omits Computer Use and subagent bridges for %s-%s', (platform, arch) => {
+    const selected = selectDesktopPackageClosure(workspacePackages(), { platform, arch })
+    const names = selected.map(entry => entry.manifest.name as string)
+    const coperaRows = [...readFileSync(join(repository, 'packages/bundle/copera-app/cordis.patch.yml'), 'utf8')
+      .matchAll(/^\s+name:\s+'?(@deepseek-ai\/[^'\s]+)'?$/gmu)].map(match => match[1]!)
+    expect(coperaRows.length).toBeGreaterThan(0)
+    expect(names).toEqual(expect.arrayContaining([
+      '@deepseek-ai/dsh-copera-app', '@deepseek-ai/dsh-copera-account', '@deepseek-ai/dsh-llm-copera', ...coperaRows,
+    ]))
+    expect(names.filter(name => /^@deepseek-ai\/dsh-(?:cua(?:-|$)|subagent-claude-code|subagent-codex)/u.test(name))).toEqual([])
+    const externals = selected.flatMap(entry => ['dependencies', 'optionalDependencies', 'peerDependencies']
+      .flatMap(section => Object.keys((entry.manifest[section] ?? {}) as Record<string, string>)))
+    expect(externals.filter(name => name.startsWith('@anthropic-ai/') || name === '@openai/codex')).toEqual([])
+  })
 })

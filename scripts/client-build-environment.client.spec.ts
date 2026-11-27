@@ -170,6 +170,31 @@ describe('client build environment', () => {
     })
   })
 
+  // COPERA: the `copera` profile brands Copera Code artifacts and discards inherited public values like `official`.
+  it('isolates the Copera Code branding while retaining repository metadata', () => {
+    const parent = {
+      DSH_CLIENT_BUILD_PROFILE: 'official',
+      DSH_CLIENT_TITLE: 'DeepSeek Harness',
+      DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
+      DSH_CLIENT_VERSION: '1.2.3',
+      DSH_CLIENT_GIT_DIRTY: 'true',
+      DSH_CLIENT_EXTRA: 'inherited',
+    }
+    const copera = {
+      DSH_CLIENT_BUILD_PROFILE: 'copera',
+      DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
+      DSH_CLIENT_TITLE: 'Copera Code',
+      DSH_CLIENT_VERSION: '1.2.3',
+    }
+    expect(resolveClientBuildEnvironment(parent, 'copera')).toEqual(copera)
+    expect(resolveClientBuildEnvironment({ ...parent, DSH_BUILD_CLIENT_PROFILE: 'copera' })).toEqual(copera)
+    expect(() => { resolveClientBuildEnvironment({}, 'copera') }).toThrow(/DSH_CLIENT_COMMIT_HASH/)
+    expect(() => {
+      resolveClientBuildEnvironment({ DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7) }, 'copera')
+    }).toThrow(/DSH_CLIENT_VERSION/)
+    expect(() => { resolveClientBuildEnvironment({}, 'unknown') }).toThrow(/expected "official", "local", or "copera"/)
+  })
+
   it('requires source metadata for an explicit local build', () => {
     expect(() => { resolveClientBuildEnvironment({}, 'local') }).toThrow(/DSH_CLIENT_COMMIT_HASH/)
     expect(() => {

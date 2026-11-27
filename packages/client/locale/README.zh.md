@@ -67,6 +67,22 @@ export function apply(ctx) {
 
 外部 id 必须是非空的 ASCII BCP 47 风格标签。它的 fallback 必须已经注册，且整条链必须终止于 `en`；未知目标、重复 id 与循环会在注册时失败。查找时先在请求命名空间内遍历生效语言的 fallback 链，再在 `common` 中遍历该链，最后显示键本身。卸载语言定义会将其从选择器移除，并让生效中的选择回落到可用的浏览器语言或默认语言。
 
+### 限定可选语言
+
+部署可以在 `locale` 行设置 `languages`（按显示顺序排列的可选 id，必须包含 `en`）和 `labels`（按 id 指定的显示名称）。Host 半侧在加载时校验它们，并在每次渲染索引页时以页面全局变量 `__DSH_LOCALE_CATALOG__` 发布。随后语言行只列出这些语言，列表之外的已存偏好或浏览器语言回退到英文，`setLocale` 拒绝未列出的 id。未列出的定义仍保持注册，作为 fallback 链的目标。两个字段都未设置时，页面不携带该全局变量，所有已注册语言都以自身标签保持可选。
+
+```yaml
+- id: locale
+  config:
+    languages: [en, pt]
+    labels:
+      pt: Português (Brasil)
+```
+
+### 覆盖字典条目
+
+`ctx.locale.override(ns, language, entries)` 在某个 locale 的某个命名空间上叠加替换模板，并返回幂等的释放函数。查找时先按从新到旧的顺序查询这些覆盖层，再查询该 locale 已注册的字典，然后继续 fallback 链。覆盖层可以在其覆盖的字典之前或之后到达，且不占用该命名空间唯一的注册席位。
+
 ### Host 半侧做什么
 
 每个已认证浏览器都遵循共享的 [settings scope 策略](../ui-settings/README.zh.md)，通过 Host settings 服务持久化偏好。

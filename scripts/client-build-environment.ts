@@ -22,6 +22,12 @@ const OFFICIAL_CLIENT_BUILD_ENVIRONMENT = {
   DSH_CLIENT_TITLE: 'DeepSeek Harness',
 } as const
 
+// COPERA: public client environment of Copera Code artifacts, selected by the `copera` profile.
+const COPERA_CLIENT_BUILD_ENVIRONMENT = {
+  DSH_CLIENT_BUILD_PROFILE: 'copera',
+  DSH_CLIENT_TITLE: 'Copera Code',
+} as const
+
 /** Public variable carrying the source commit embedded in client artifacts. */
 const CLIENT_COMMIT_HASH_VARIABLE = 'DSH_CLIENT_COMMIT_HASH'
 
@@ -192,7 +198,8 @@ export function resolveClientBuildEnvironment(
   profile: string | undefined = environment[CLIENT_BUILD_PROFILE_SELECTOR],
 ): ClientBuildEnvironment {
   if (profile === undefined) return clientBuildEnvironment(environment)
-  if (profile === 'official' || profile === 'local') {
+  // COPERA: `copera` resolves like `official` with the Copera Code branding.
+  if (profile === 'official' || profile === 'local' || profile === 'copera') {
     const commitHash = environment[CLIENT_COMMIT_HASH_VARIABLE]
     const version = environment[CLIENT_VERSION_VARIABLE]
     if (commitHash === undefined) {
@@ -204,13 +211,13 @@ export function resolveClientBuildEnvironment(
     return {
       DSH_CLIENT_COMMIT_HASH: commitHash,
       DSH_CLIENT_VERSION: version,
-      ...(profile === 'official' ? OFFICIAL_CLIENT_BUILD_ENVIRONMENT : {
+      ...(profile === 'copera' ? COPERA_CLIENT_BUILD_ENVIRONMENT : profile === 'official' ? OFFICIAL_CLIENT_BUILD_ENVIRONMENT : {
         DSH_CLIENT_BUILD_PROFILE: 'local',
         ...(environment.DSH_CLIENT_GIT_DIRTY === 'true' ? { DSH_CLIENT_GIT_DIRTY: 'true' } : {}),
       }),
     }
   }
-  throw new Error(`unknown client build profile ${JSON.stringify(profile)}; expected "official" or "local"`)
+  throw new Error(`unknown client build profile ${JSON.stringify(profile)}; expected "official", "local", or "copera"`) // COPERA: names the `copera` profile
 }
 
 /**

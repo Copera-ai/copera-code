@@ -19,6 +19,19 @@ export const DESKTOP_HOST_RUNTIME_FILES = [
   'lib/cli.js',
 ] as const
 
+/**
+ * Release packages the Copera Code runtime omits, and the dependencies through which `@deepseek-ai/dsh` reaches them.
+ * The package set leaves out every listed package and runtime preparation removes the two direct dependencies, so
+ * neither the local tarballs nor a registry supplies Computer Use.
+ */
+// COPERA: Computer Use is not part of the packaged Copera Code runtime.
+export const DESKTOP_OMITTED_PACKAGES: readonly string[] = [
+  '@deepseek-ai/dsh-cua-bundle', '@deepseek-ai/dsh-cua-mcp', '@deepseek-ai/dsh-cua', '@deepseek-ai/dsh-cua-macos', '@deepseek-ai/dsh-cua-windows',
+]
+
+/** Direct dependencies of `@deepseek-ai/dsh` that runtime preparation removes with pnpm `-` overrides. */
+export const DESKTOP_REMOVED_DEPENDENCIES: readonly string[] = ['@deepseek-ai/dsh-cua-bundle', '@deepseek-ai/dsh-cua-mcp']
+
 /** One immutable npm tarball in the Desktop core package set. */
 export interface DesktopCorePackageRecord {
   readonly name: string

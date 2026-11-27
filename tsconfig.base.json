@@ -56,6 +56,9 @@
       "@deepseek-ai/dsh-client-ui-account-notifications/client": ["./packages/client/ui-account-notifications/src/client/index.ts"],
       "@deepseek-ai/dsh-client-ui-settings-account": ["./packages/client/ui-settings-account/src/index.ts"],
       "@deepseek-ai/dsh-client-ui-settings-account/client": ["./packages/client/ui-settings-account/src/client/index.ts"],
+      // COPERA: aliases for the Copera sign-in screen client package.
+      "@deepseek-ai/dsh-client-ui-copera-account": ["./packages/client/ui-copera-account/src/index.ts"],
+      "@deepseek-ai/dsh-client-ui-copera-account/client": ["./packages/client/ui-copera-account/src/client/index.ts"],
       "@deepseek-ai/dsh-api-gateway/stream-protocol": ["./packages/api/gateway/src/stream-protocol.ts"],
       "@deepseek-ai/dsh-deepseek-account": ["./packages/account/deepseek-account/src/index.ts"],
       "@deepseek-ai/dsh-deepseek-account/types": ["./packages/account/deepseek-account/src/types.ts"],
@@ -340,6 +343,8 @@
       "@deepseek-ai/dsh-client-ui-layout": ["./packages/client/ui-layout/src"],
       "@deepseek-ai/dsh-client-ui-sidebar": ["./packages/client/ui-sidebar/src"],
       "@deepseek-ai/dsh-client-ui-brand-official": ["./packages/client/ui-brand-official/src"],
+      // COPERA: alias for the Copera Code brand client package.
+      "@deepseek-ai/dsh-client-ui-brand-copera": ["./packages/client/ui-brand-copera/src"],
       "@deepseek-ai/dsh-client-ui-approval": ["./packages/client/ui-approval/src"],
       "@deepseek-ai/dsh-client-ui-approval/client": ["./packages/client/ui-approval/src/client/index.ts"],
       "@deepseek-ai/dsh-client-ui-chat": ["./packages/client/ui-chat/src"],
@@ -495,6 +500,7 @@
       "@deepseek-ai/dsh-config-editor": ["./packages/boot/config-editor/src"],
       "@deepseek-ai/dsh-copera-account": ["./packages/account/copera-account/src"],
       "@deepseek-ai/dsh-copera-app": ["./packages/bundle/copera-app/src"],
+      "@deepseek-ai/dsh-copera-launch": ["./packages/util/copera-launch/src"],
       "@deepseek-ai/dsh-credentials": ["./packages/credentials/credentials/src"],
       "@deepseek-ai/dsh-credentials-local": ["./packages/credentials/credentials-local/src"],
       "@deepseek-ai/dsh-cua-bundle": ["./packages/experimental/cua-bundle/src"],

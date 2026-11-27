@@ -10,3 +10,9 @@ To maintain the long\-term healthy development of the DeepSeek Harness ecosystem
 - Additionally, please avoid using official brand materials in your promotions or presentations in a way that could cause misunderstanding, so as not to give users the false impression of official endorsement, cooperation, or authorization\.
 
 We believe that a clear and orderly community environment will make every developer's efforts more visible and more readily recognized\. For the few cases that do not comply with the above specifications, we may contact the relevant parties to make appropriate adjustments in order to maintain the overall order of the ecosystem\. Thank you for your understanding and support—let us work together to build a more friendly and sustainable open\-source community\.
+
+## Copera Code fork
+
+This repository is a fork maintained by Copera. Copera Code is a separate product by Copera, built on DeepSeek Harness (DSH). It is not an official DeepSeek Harness product, and DeepSeek does not endorse, sponsor, or operate it. Following the guidelines above, Copera Code does not use the "DeepSeek Harness" name or official DeepSeek Harness brand materials as its product name or identity, and describes its relationship only as "built on DeepSeek Harness (DSH)".
+
+The Copera name, the Copera logo, and the Copera Code brand assets belong to Copera. The MIT license of this repository grants no rights to them.

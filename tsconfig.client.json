@@ -75,6 +75,8 @@
     { "path": "./packages/core/tool-executor-native" },
     { "path": "./packages/core/tool-executor-ptc" },
     { "path": "./packages/client/ui-settings-account" },
+    // COPERA: Copera sign-in screen and account menu.
+    { "path": "./packages/client/ui-copera-account" },
     { "path": "./packages/client/ui-account-notifications" },
     // Shared leaf: web e2e boots the real host webserver (fixture + real-host
     // smoke policy). webserver has zero workspace deps and no cordis merge,
@@ -119,6 +121,8 @@
     { "path": "./packages/client/ui-layout" },
     { "path": "./packages/client/ui-sidebar" },
     { "path": "./packages/client/ui-brand-official" },
+    // COPERA: Copera Code brand.
+    { "path": "./packages/client/ui-brand-copera" },
     { "path": "./packages/client/ui-approval" },
     { "path": "./packages/client/ui-chat/tsconfig.client.json" },
     { "path": "./packages/client/ui-conversation/tsconfig.client.json" },

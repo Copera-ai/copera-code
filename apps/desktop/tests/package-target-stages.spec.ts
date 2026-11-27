@@ -30,7 +30,7 @@ vi.mock('node:fs', async importOriginal => ({
 
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks() })
 
-const environment = { DSH_DESKTOP_APP_ID: 'com.example.test', DSH_DESKTOP_AUTO_UPDATE_ENV: 'test',
+const environment = { DSH_DESKTOP_APP_ID: 'com.example.test', DSH_DESKTOP_UPDATES: 'on', DSH_DESKTOP_AUTO_UPDATE_ENV: 'test',
   DOWNLOAD_TEST_ORIGIN: 'https://updates.example.com', DOWNLOAD_TEST_RELEASE_ID: '0123456789abcdef0123456789abcdef',
   DSH_DESKTOP_WINDOWS_TOKEN_PIN: 'fixture-pin', DSH_DESKTOP_WINDOWS_SIGNATURE_CACHE_CONCURRENCY: '2' }
 
@@ -151,7 +151,7 @@ it.each([undefined, '2'])('uses bounded Windows packing while retaining signing 
 it('requires one signing preflight before building, then records only the complete release', async () => {
   const { run, stages } = supervisor()
   await packageTarget(parseDesktopPackageInvocation(['win-x64'], 'win32', 'x64'), environment, run)
-  expect(stages.slice(0, 2)).toEqual(['preflight:windows-signing', 'run build:official'])
+  expect(stages.slice(0, 2)).toEqual(['preflight:windows-signing', 'run build --profile copera'])
   expect(stages.filter(stage => stage === 'preflight:windows-signing')).toHaveLength(1)
   expect(vi.mocked(withWindowsSigningStage).mock.calls.map(([options]) => options.stage))
     .toEqual(['preflight', 'artifacts'])
@@ -183,7 +183,7 @@ it('initializes shared storage only after acquiring the preflight stage lock', a
   await packageTarget(parseDesktopPackageInvocation(['win-x64'], 'win32', 'x64'), environment, run)
 })
 
-it.each(['preflight:windows-signing', 'run build:official', 'run sign:primary-runtime', 'run prepare:dsh --defer-runtime-smoke', 'run sign:primary-runtime --dsh',
+it.each(['preflight:windows-signing', 'run build --profile copera', 'run sign:primary-runtime', 'run prepare:dsh --defer-runtime-smoke', 'run sign:primary-runtime --dsh',
   'exec tsx scripts/smoke-packaged-runtime.ts',
   'exec electron-builder --config electron-builder.config.mjs --win --x64 --publish never'])
 ('never continues or records a release after %s fails', async (failure) => {
@@ -197,7 +197,7 @@ it.each(['preflight:windows-signing', 'run build:official', 'run sign:primary-ru
 it.each(['--unsigned', '--prepare-only'])('keeps %s hardware-free and creates no release record', async (mode) => {
   const { run, stages } = supervisor()
   await packageTarget(parseDesktopPackageInvocation(['win-x64', mode], 'win32', 'x64'), environment, run)
-  expect(stages[0]).toBe(mode === '--unsigned' ? 'run build --profile local' : 'run build:official')
+  expect(stages[0]).toBe('run build --profile copera')
   expect(stages).not.toContain('preflight:windows-signing')
   expect(stages).not.toContain('run sign:primary-runtime')
   expect(stages).not.toContain('run sign:primary-runtime --dsh')
@@ -207,7 +207,8 @@ it.each(['--unsigned', '--prepare-only'])('keeps %s hardware-free and creates no
   expect(stages.includes('exec tsx scripts/smoke-packaged-runtime.ts --unsigned')).toBe(mode === '--unsigned')
 })
 
-it.each(['mac-arm64', 'mac-x64', 'win-x64'] as const)('selects branding from the signing mode for %s', async (target) => {
+// COPERA: every Desktop package builds the Web client with the `copera` client build profile.
+it.each(['mac-arm64', 'mac-x64', 'win-x64'] as const)('builds the copera client profile in every signing mode for %s', async (target) => {
   const modes = [[], ['--unsigned'], ['--dir'], ['--unsigned', '--dir'], ['--prepare-only'],
     ...(target === 'win-x64' ? [] : [['--skip-notarization'], ['--skip-notarization', '--dir']])]
   for (const flags of modes) {
@@ -224,15 +225,15 @@ it.each(['mac-arm64', 'mac-x64', 'win-x64'] as const)('selects branding from the
       DSH_CLIENT_TITLE: 'Inherited title',
     }, run)
     const build = stages.find(stage => stage.startsWith('run build'))
-    expect(build).toBe(unsigned ? 'run build --profile local' : 'run build:official')
+    expect(build).toBe('run build --profile copera')
     expect(stages.some(stage => stage.startsWith('exec tsx apps/desktop/scripts/pack-local-packages.ts'))).toBe(unsigned)
     expect(stages.some(stage => stage.startsWith('run release:pack --family dsh'))).toBe(!unsigned)
   }
 })
 
 it.each([
-  ['mac-arm64', 'run build --profile local'],
-  ['win-x64', 'run build --profile local'],
+  ['mac-arm64', 'run build --profile copera'],
+  ['win-x64', 'run build --profile copera'],
   ['mac-arm64', 'exec tsx apps/desktop/scripts/pack-local-packages.ts'],
   ['win-x64', 'exec tsx apps/desktop/scripts/pack-local-packages.ts'],
 ] as const)('stops unsigned %s packaging when %s fails', async (target, failure) => {
@@ -421,4 +422,14 @@ it.each([undefined, '7'])('applies file-owned compression only to the final nota
   expect(zip?.[3].env.ELECTRON_BUILDER_COMPRESSION_LEVEL).toBe(level ?? '3')
   expect(dmg?.[3].env.ELECTRON_BUILDER_COMPRESSION_LEVEL).toBe('9')
   expect(writeFileSync).toHaveBeenCalledOnce()
+})
+
+// COPERA: without auto-update a signed build writes no update release record and needs no feed settings.
+it('records no update release for a signed build without auto-update', async () => {
+  const { run, stages } = supervisor()
+  const settings = Object.fromEntries(Object.entries(environment)
+    .filter(([name]) => !/^(?:DSH_DESKTOP_UPDATES|DSH_DESKTOP_AUTO_UPDATE_ENV|DOWNLOAD_)/u.test(name)))
+  await packageTarget(parseDesktopPackageInvocation(['win-x64'], 'win32', 'x64'), settings, run)
+  expect(stages.at(-1)).toBe('exec tsx scripts/smoke-packaged-runtime.ts')
+  expect(writeFileSync).not.toHaveBeenCalled()
 })

@@ -46,6 +46,8 @@
     }
   },
   "dependencies": {
+    "@deepseek-ai/dsh-client-ui-brand-copera": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-copera-account": "workspace:*",
     "@deepseek-ai/dsh-copera-account": "workspace:*",
     "@deepseek-ai/dsh-llm-copera": "workspace:*"
   },

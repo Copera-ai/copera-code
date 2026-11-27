@@ -30,6 +30,7 @@ kind: "package-reference"
 | 字段 | 默认值 | 含义 |
 |---|---|---|
 | `cookieMaxAgeDays` | `30` | 浏览器与 API Cookie 的绝对有效期，单位为天 |
+| `entryLabel` | `dsh web` | 启动时打印在已认证入口 URL 之前的标签 |
 
 在 WebApp runtime 上配置 `printUrl` 与 `openBrowser`，而非本插件。不发布启动入口时，认证仍然可用。
 

@@ -27,6 +27,7 @@ it.each(['arm64', 'x64'] as const)('embeds stable in a prerelease macOS %s packa
   const version = `${desktopBuildVersionPrefix(manifest.version)}20261103.1`
   const config = createElectronBuilderConfig({
     DSH_DESKTOP_APP_ID: 'com.example.channel-test',
+    DSH_DESKTOP_UPDATES: 'on', // COPERA: the upstream update feed.
     DSH_DESKTOP_AUTO_UPDATE_ENV: 'production',
     DSH_DESKTOP_UPDATE_CHANNEL: 'stable',
     DSH_DESKTOP_BUILD_VERSION: version,

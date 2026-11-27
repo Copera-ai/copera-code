@@ -2,33 +2,36 @@
 # section, a hash of its English and Chinese blocks outside code blocks and generated regions.
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write README.md
-/deepseek-harness:
-  en: f68c4f080ce55ff2
-  zh: 88a76d7f7f0b260e
-/deepseek-harness/developer-preview:
-  en: 4ef4d8a71ac143f0
-  zh: 1bfc3149ba8e5543
-/deepseek-harness/run:
+/copera-code:
+  en: 963054fd1db2c5c0
+  zh: d460d9a44c41d552
+/copera-code/preview:
+  en: 3fd41441dacfe61e
+  zh: ddb171435a852678
+/copera-code/run:
   en: 4e0248e4c6474fc6
   zh: eb2fb8d78c7d6bc0
-/deepseek-harness/run/run-from-npm:
-  en: e22005cd42e6cbad
-  zh: 0f536f4208df1d60
-/deepseek-harness/run/run-from-source:
-  en: 819e3f7c144d0d64
-  zh: de815f040975dba7
-/deepseek-harness/community-and-support:
-  en: 20acf6451fdc869b
-  zh: d06246dd019ecef7
-/deepseek-harness/contributing:
-  en: cabc2d3e9f8898bd
-  zh: 83b6d238bae29ce3
-/deepseek-harness/development:
-  en: 803ca2b11b497bed
-  zh: 8b4071eb0e7783ef
-/deepseek-harness/citation:
-  en: 6704e9e5a8d49a91
-  zh: 85c9cdd8d56f8e9d
-/deepseek-harness/license:
-  en: 926995344fc1c72b
-  zh: c92fab5abf85932f
+/copera-code/run/run-from-npm-coming-soon:
+  en: d88d44ce845f0a7c
+  zh: 985d0fd7eea012fb
+/copera-code/run/run-from-source:
+  en: 15e953481a759709
+  zh: 9c2f2c7b75416a31
+/copera-code/sign-in:
+  en: e6e45413261a230e
+  zh: 0adda24feffee49b
+/copera-code/data-and-privacy:
+  en: 47a230e96cf3d78f
+  zh: 5dc42e1fa6a31116
+/copera-code/languages:
+  en: 3a52f17fc9cb3b59
+  zh: 374c9e47c7ce2d53
+/copera-code/relationship-to-deepseek-harness:
+  en: 21be8a3f60453fd2
+  zh: 023e47ab1c46f8fb
+/copera-code/development:
+  en: 231790c701471780
+  zh: 9c5255c8e4cfa841
+/copera-code/license:
+  en: b37522069bbc1f28
+  zh: d33c7173b9363446

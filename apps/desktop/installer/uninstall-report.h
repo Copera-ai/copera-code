@@ -6,7 +6,7 @@
 
 namespace uninstall_report {
 struct Session {
-    std::wstring text = L"DeepSeek Harness uninstall report\r\n";
+    std::wstring text = L"Copera Code uninstall report\r\n"; // COPERA: product name.
     std::wstring path;
     bool issues = false;
     bool mainBlocked = false;
@@ -58,7 +58,7 @@ inline UINT Width(HWND parent) {
 }
 inline bool Save(HWND parent, Session& session, LPCWSTR caption, LPCWSTR failed) {
     for (;;) {
-        WCHAR filename[32768] = L"DeepSeek-Harness-uninstall-report.txt";
+        WCHAR filename[32768] = L"Copera-Code-uninstall-report.txt"; // COPERA: product name.
         OPENFILENAMEW picker{};
         picker.lStructSize = sizeof(picker);
         picker.hwndOwner = parent;
@@ -247,7 +247,7 @@ extern "C" __declspec(dllexport) uninstall_report::Session* __cdecl UninstallBeg
 extern "C" __declspec(dllexport) DWORD __cdecl UninstallPrepare(uninstall_report::Session* session, LPCWSTR path, LPCWSTR home) {
     bool homeFailure = false;
     const DWORD error = uninstall_report::Prepare(*session, path, home, homeFailure);
-    if (error) uninstall_report::Add(*session, homeFailure ? L"Validate DSH_HOME; no deletion started" : L"Validate removal scope; no deletion started", homeFailure ? home : path, error);
+    if (error) uninstall_report::Add(*session, homeFailure ? L"Validate COPERA_CODE_HOME; no deletion started" /* COPERA: product data home variable. */ : L"Validate removal scope; no deletion started", homeFailure ? home : path, error);
     return error;
 }
 extern "C" __declspec(dllexport) DWORD __cdecl UninstallPayload(uninstall_report::Session* session, LPCWSTR path, LPCWSTR executable, LPCWSTR uninstaller) {

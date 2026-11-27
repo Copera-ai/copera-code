@@ -34,7 +34,7 @@ Function un.BeginCleanup
   InitPluginsDir
   File "/oname=$PLUGINSDIR\window-frame.dll" "${INSTALLER_BUILD_DIR}\window-frame.dll"
   System::Call 'kernel32::GetCurrentProcessId() i.r0'
-  StrCpy $UnReportPath "$TEMP\DeepSeek-Harness-uninstall-$0.txt"
+  StrCpy $UnReportPath "$TEMP\Copera-Code-uninstall-$0.txt" ; COPERA: product name.
   System::Call '$PLUGINSDIR\window-frame.dll::UninstallBegin(w "$UnReportPath") p.r0 ?c'
   StrCpy $UnSession $0
   ${If} $UnSession == 0
@@ -126,8 +126,8 @@ Function un.CleanData
   ${IfNot} ${Errors}
     Return
   ${EndIf}
-  ; Only a DSH_HOME published as a Windows environment variable is visible here.
-  ReadEnvStr $UnHome DSH_HOME
+  ; COPERA: Copera Code reads its data home from COPERA_CODE_HOME, published as a Windows environment variable.
+  ReadEnvStr $UnHome COPERA_CODE_HOME
   ClearErrors
   StrCpy $UnTarget "$APPDATA\${PRODUCT_FILENAME}"
   Call un.RemoveData
@@ -143,8 +143,9 @@ FunctionEnd
 
 ; Upgrade replacement retains integrations; KEEP_APP_DATA controls only user data.
 !define /ifndef DSH_COMMAND_ENVIRONMENT_KEY "Environment"
-!define /ifndef DSH_COMMAND_OWNER_KEY "Software\DeepSeekHarness\Command"
-!define /ifndef DSH_PROTOCOL_KEY "Software\Classes\dsh"
+; COPERA: Copera Code registry names and the copera-code URL scheme.
+!define /ifndef DSH_COMMAND_OWNER_KEY "Software\CoperaCode\Command"
+!define /ifndef DSH_PROTOCOL_KEY "Software\Classes\copera-code"
 !define /ifndef DSH_COMMAND_MUTEX "default"
 Function un.CleanRegistration
   ${If} ${isUpdated}

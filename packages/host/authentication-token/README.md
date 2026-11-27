@@ -30,6 +30,7 @@ Mount this function plugin beside Connection and Credentials. It also injects `c
 | Field | Default | Meaning |
 |---|---|---|
 | `cookieMaxAgeDays` | `30` | Absolute browser and API Cookie lifetime in days |
+| `entryLabel` | `dsh web` | Label printed before the authenticated entry URL at startup |
 
 Configure `printUrl` and `openBrowser` on the WebApp runtime, not this plugin. Authentication remains available without startup publication.
 

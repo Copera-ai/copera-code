@@ -585,6 +585,34 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-client-hmr -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-client-locale -->
+<a id="deepseek-aidsh-client-locale"></a>
+
+## `@deepseek-ai/dsh-client-locale`
+
+- `refs`: `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/client/locale/src/index.ts:19`](../packages/client/locale/src/index.ts)
+
+```ts config-catalog
+/** Runtime preferences projected to the browser and the deployment language catalog. */
+export interface Config extends LocaleCatalog {
+  /** Explicit locale; omission follows the browser. */
+  preference: Volatile<string | undefined>
+}
+
+/** Deployment choice of selectable languages, shared by the Host config and the browser runtime. */
+export interface LocaleCatalog {
+  /** Selectable language ids in display order; must include English, the fallback terminal. Absent: every registered language. */
+  languages?: readonly LocaleId[] | undefined
+  /** Display labels replacing a language's own label, keyed by language id. */
+  labels?: Readonly<Record<LocaleId, string>> | undefined
+}
+
+/** Open locale identifier accepted from language-pack plugins. */
+export type LocaleId = string
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-client-locale -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-client-product-analytics -->
 <a id="deepseek-aidsh-client-product-analytics"></a>
 
@@ -2041,13 +2069,16 @@ export interface Config {
 ## `@deepseek-ai/dsh-host-authentication-token`
 
 - `inject`: `connection` · `connection.authentication` · `credentials`
-- `source`: [`packages/host/authentication-token/src/index.ts:16`](../packages/host/authentication-token/src/index.ts)
+- `source`: [`packages/host/authentication-token/src/index.ts:20`](../packages/host/authentication-token/src/index.ts)
 
 ```ts config-catalog
-/** Default browser and API cookie lifetime. */
+/** Default browser and API cookie lifetime, and the label of the printed entry URL. */
 export interface Config {
   /** Absolute cookie lifetime in days; default 30. */
   cookieMaxAgeDays: number
+  // COPERA: a product names its own startup line.
+  /** Label printed before the authenticated entry URL at startup; `dsh web` when omitted. */
+  entryLabel?: string
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-host-authentication-token -->
@@ -5599,7 +5630,6 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-browser-use` | — | [`packages/browser-use/browser-use/src/index.ts`](../packages/browser-use/browser-use/src/index.ts) |
 | `@deepseek-ai/dsh-client-config` | — | [`packages/client/config/src/index.ts`](../packages/client/config/src/index.ts) |
 | `@deepseek-ai/dsh-client-file-upload` | `agents` · `attachments` · `commands` · `connection` | [`packages/client/file-upload/src/index.ts`](../packages/client/file-upload/src/index.ts) |
-| `@deepseek-ai/dsh-client-locale` | — | [`packages/client/locale/src/index.ts`](../packages/client/locale/src/index.ts) |
 | `@deepseek-ai/dsh-client-modules` | `loader` | [`packages/client/modules/src/index.ts`](../packages/client/modules/src/index.ts) |
 | `@deepseek-ai/dsh-client-resources` | — | [`packages/client/resources/src/index.ts`](../packages/client/resources/src/index.ts) |
 | `@deepseek-ai/dsh-client-script-realm` | — | [`packages/client/script-realm/src/index.ts`](../packages/client/script-realm/src/index.ts) |
@@ -5609,11 +5639,13 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-client-ui-agent-team` | — | [`packages/client/ui-agent-team/src/index.ts`](../packages/client/ui-agent-team/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-approval` | — | [`packages/client/ui-approval/src/index.ts`](../packages/client/ui-approval/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-attachment` | — | [`packages/client/ui-attachment/src/index.ts`](../packages/client/ui-attachment/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-brand-copera` | — | [`packages/client/ui-brand-copera/src/index.ts`](../packages/client/ui-brand-copera/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-brand-official` | — | [`packages/client/ui-brand-official/src/index.ts`](../packages/client/ui-brand-official/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-chat` | — | [`packages/client/ui-chat/src/index.ts`](../packages/client/ui-chat/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-commands` | — | [`packages/client/ui-commands/src/index.ts`](../packages/client/ui-commands/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-connector-account` | — | [`packages/client/ui-connector-account/src/index.ts`](../packages/client/ui-connector-account/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-conversation` | — | [`packages/client/ui-conversation/src/index.ts`](../packages/client/ui-conversation/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-copera-account` | — | [`packages/client/ui-copera-account/src/index.ts`](../packages/client/ui-copera-account/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-cordis` | — | [`packages/extensions/ui-cordis/src/index.ts`](../packages/extensions/ui-cordis/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-creation-recommendations` | — | [`packages/client/ui-creation-recommendations/src/index.ts`](../packages/client/ui-creation-recommendations/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-deliverables` | `connection` · `sessionQuery` · `sessionController` · `workspaceFiles` · `fs` · `sandboxPolicy` · `workspaceChanges` | [`packages/client/ui-deliverables/src/index.ts`](../packages/client/ui-deliverables/src/index.ts) |
@@ -5765,6 +5797,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 | `@deepseek-ai/dsh-client-web` | — | [`packages/client/web/src/index.ts`](../packages/client/web/src/index.ts) |
 | `@deepseek-ai/dsh-cmdline` | — | [`packages/boot/cmdline/src/index.ts`](../packages/boot/cmdline/src/index.ts) |
 | `@deepseek-ai/dsh-copera-app` | — | [`packages/bundle/copera-app/src/index.ts`](../packages/bundle/copera-app/src/index.ts) |
+| `@deepseek-ai/dsh-copera-launch` | — | [`packages/util/copera-launch/src/index.ts`](../packages/util/copera-launch/src/index.ts) |
 | `@deepseek-ai/dsh-cua-bundle` | — | [`packages/experimental/cua-bundle/src/index.ts`](../packages/experimental/cua-bundle/src/index.ts) |
 | `@deepseek-ai/dsh-deque` | — | [`packages/util/deque/src/index.ts`](../packages/util/deque/src/index.ts) |
 | `@deepseek-ai/dsh-error` | — | [`packages/util/error/src/index.ts`](../packages/util/error/src/index.ts) |

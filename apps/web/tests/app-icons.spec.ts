@@ -3,10 +3,14 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
-  APP_ICON_VARIANTS, ICON_OUTPUT_DIRECTORY, MASKABLE_ARTWORK_SCALE, TILE_SOURCE,
+  APP_ICON_VARIANTS, ICON_OUTPUT_DIRECTORY, MASKABLE_ARTWORK_SCALE,
   maskableDocument, roundedDocument, tileDocument,
 } from '../scripts/render-app-icons.ts'
 import { pngSize } from './png-size.ts'
+
+// COPERA: the desktop tile is the Copera icon, whose install icons are rendered from the Copera symbol; the
+// generator's transformations are checked against the upstream tile it was written for.
+const TILE_SOURCE = new URL('fixtures/app-icons/upstream-tile.svg', import.meta.url)
 
 describe('web install icons', () => {
   it('ships every declared variant at its declared edge', async () => {
@@ -32,7 +36,7 @@ describe('web install icons', () => {
   it('rounds the full tile with the macOS corner geometry and unscaled artwork', async () => {
     const source = await readFile(TILE_SOURCE, 'utf8')
     const rounded = roundedDocument(source)
-    const macos = await readFile(new URL('../../desktop/resources/icon-macos.svg', import.meta.url), 'utf8')
+    const macos = await readFile(new URL('fixtures/app-icons/upstream-tile-macos.svg', import.meta.url), 'utf8')
     expect(rounded).toContain('viewBox="40 32 1024 1024"')
     expect(rounded).toContain('<g clip-path="url(#install-tile-clip)">')
     expect(rounded).toContain('<clipPath id="install-tile-clip"><rect x="40" y="32" width="1024" height="1024" rx="230"/></clipPath>')

@@ -7,6 +7,7 @@ import { randomBytes } from 'node:crypto'
 import { setTimeout as sleep } from 'node:timers/promises'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-host-webserver'
+import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
 import type {} from '@deepseek-ai/dsh-llm-copera'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { registerCallbackListener, type CallbackOutcome } from './callback.ts'
@@ -45,6 +46,8 @@ interface Attempt {
 export class CoperaAccount extends TypertRemoteService {
   static inject = ['credentials']
   private readonly origin: string
+  /** Reads a variable from the inherited process layer only; a project `.env` must not set the token or the origin. */
+  private readonly processValue: (name: string) => string | undefined
   private readonly store: GrantStore
   private attempt: Attempt | undefined
   private disposeCallback: (() => void) | undefined
@@ -57,14 +60,15 @@ export class CoperaAccount extends TypertRemoteService {
   /** @param ctx - Host Context with the `credentials` service; `webServer` must be running before sign-in starts. */
   constructor(ctx: Context) {
     super(ctx, 'coperaAccount')
-    this.origin = resolveApiOrigin(process.env.DSH_COPERA_API_ORIGIN)
+    this.processValue = name => launchEnvironmentOf(ctx).getFrom(name, ['process'])?.value
+    this.origin = resolveApiOrigin(this.processValue('DSH_COPERA_API_ORIGIN'))
     this.store = new GrantStore(ctx, this.origin, {
       onRevoked: () => {
         this.notice = 'session-expired'
         this.changed()
       },
     })
-    ctx.provide('coperaTokens', new AccountTokenSource(this.store, () => process.env.DSH_COPERA_TOKEN))
+    ctx.provide('coperaTokens', new AccountTokenSource(this.store, () => this.processValue('DSH_COPERA_TOKEN')))
     ctx.on('credentials/record-updated', (key) => { if (key === GRANT_KEY) this.changed() })
     ctx.effect(() => async () => {
       this.lifetime.abort()
@@ -87,7 +91,7 @@ export class CoperaAccount extends TypertRemoteService {
     if (grant !== null) {
       return { status: 'signed-in', via: 'oauth', profile: grant.account === null ? null : { ...grant.account }, attempt, notice: this.notice }
     }
-    const envToken = process.env.DSH_COPERA_TOKEN
+    const envToken = this.processValue('DSH_COPERA_TOKEN')
     if (envToken !== undefined && envToken !== '') return { status: 'signed-in', via: 'env-token', profile: null, attempt, notice: this.notice }
     return { status: 'signed-out', via: null, profile: null, attempt, notice: this.notice }
   }

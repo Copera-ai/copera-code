@@ -19,6 +19,7 @@ import {
   DESKTOP_HOST_PACKAGE,
   DESKTOP_HOST_RUNTIME_FILES,
   DESKTOP_PACKAGES_DIR,
+  DESKTOP_OMITTED_PACKAGES,
   DESKTOP_PACKAGE_SET_FILE,
   parseDesktopCorePackageSet,
   type DesktopCorePackageRecord,
@@ -77,14 +78,14 @@ export function selectDesktopPackageClosure(
     .map(path => (JSON.parse(readFileSync(join(REPOSITORY_ROOT, path), 'utf8')) as { name: string }).name))
   const selected = new Map<string, PackedDesktopPackage>()
   const visit = (name: string): void => {
-    if (selected.has(name)) return
+    if (selected.has(name) || DESKTOP_OMITTED_PACKAGES.includes(name)) return // COPERA: omitted release packages.
     const packed = available.get(name)
     if (packed === undefined) throw new Error(`desktop package set: packed inputs omit required package ${name}`)
     selected.set(name, packed)
     for (const section of REQUIRED_DEPENDENCY_SECTIONS) {
       for (const dependency of dependencyNames(packed.manifest, section)) {
         if (available.has(dependency)) visit(dependency)
-        else if (workspaceNames.has(dependency)) {
+        else if (workspaceNames.has(dependency) && !DESKTOP_OMITTED_PACKAGES.includes(dependency)) {
           throw new Error(`desktop package set: ${name} requires unpacked package ${dependency}`)
         }
       }

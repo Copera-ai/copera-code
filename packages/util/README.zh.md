@@ -49,6 +49,7 @@ kind: "package-group"
 | [`output-retention/`](output-retention/README.zh.md) | 限制面向模型的输出并报告精确的省略元数据 |
 | [`time/`](time/README.zh.md) | 解析严格的时刻、本地日历与调用方所报的 IANA 时区，并持有毫秒精度的时间段 |
 | [`timeout/`](timeout/README.zh.md) | 截止时间运算、信号融合与超时和取消分类 |
+| [`copera-launch/`](copera-launch/README.zh.md) | 把 `copera-code` 命令行和 `COPERA_CODE_*` 变量映射为 `dsh --profile copera` 启动，供 npm 命令和 Copera Code 桌面端使用 |
 
 -----
 

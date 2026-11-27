@@ -67,9 +67,10 @@ export interface WelcomeAuthentication {
 
 /**
  * Decide whether a startup or sign-out requires the welcome entry.
- * @param authentication - current account and independently stored API-key facts.
- * @returns true only when neither authentication route is configured.
+ * @param _authentication - current account and independently stored API-key facts.
+ * @returns false: Copera Code signs in through the in-app overlay, so the native welcome entry is never shown.
  */
-export function needsWelcome(authentication: WelcomeAuthentication): boolean {
-  return !authentication.loggedIn && !authentication.hasApiKey
+export function needsWelcome(_authentication: WelcomeAuthentication): boolean {
+  // COPERA: the upstream DeepSeek sign-in and API-key form is replaced by the Copera sign-in overlay.
+  return false
 }

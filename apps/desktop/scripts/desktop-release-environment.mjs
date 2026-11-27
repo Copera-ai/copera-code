@@ -1,5 +1,7 @@
 /** Resolve public release identifiers supplied by the packaging environment. */
 
+import { productIdentity } from './product-identity.mjs' // COPERA: product application ID default.
+
 /** Environment variable that supplies the Electron application identifier. */
 export const DESKTOP_APP_ID_ENV = 'DSH_DESKTOP_APP_ID'
 
@@ -57,11 +59,12 @@ export function resolveNpmRegistry(env) {
 
 /**
  * Resolve and validate the application identifier shared by every platform target.
- * @param {NodeJS.ProcessEnv} env - Packaging environment.
+ * @param {NodeJS.ProcessEnv} env - Packaging environment; an unset or empty value selects the product application ID.
  * @returns {string} Reverse-DNS application identifier.
  */
 export function resolveDesktopAppId(env) {
-  const appId = requireEnvironmentValue(env, DESKTOP_APP_ID_ENV)
+  // COPERA: the application ID comes from product-identity.mjs; DSH_DESKTOP_APP_ID only overrides it for test installs.
+  const appId = env[DESKTOP_APP_ID_ENV]?.trim() || productIdentity.appId
   if (!/^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/u.test(appId)) {
     throw new Error(`desktop release environment: ${DESKTOP_APP_ID_ENV} must be a reverse-DNS identifier`)
   }

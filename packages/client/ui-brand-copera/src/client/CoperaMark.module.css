@@ -1,0 +1,11 @@
+.mark {
+  display: block;
+  flex: none;
+  user-select: none;
+}
+
+/* Size and weight come from the sidebar's brand-name row. */
+.name {
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}

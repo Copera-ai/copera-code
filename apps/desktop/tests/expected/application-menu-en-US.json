@@ -1,6 +1,6 @@
 [
   {
-    "label": "About DeepSeek Harness",
+    "label": "About Copera Code",
     "role": "about"
   },
   {
@@ -18,9 +18,6 @@
     "label": "Check for Updates…"
   },
   {
-    "label": "Manage dsh Command…"
-  },
-  {
     "type": "separator"
   },
   {
@@ -32,7 +29,7 @@
   },
   {
     "role": "hide",
-    "label": "Hide DeepSeek Harness"
+    "label": "Hide Copera Code"
   },
   {
     "role": "hideOthers",
@@ -47,6 +44,6 @@
   },
   {
     "role": "quit",
-    "label": "Quit DeepSeek Harness"
+    "label": "Quit Copera Code"
   }
 ]

@@ -66,6 +66,13 @@ interface ChromeRow {
 }
 
 const CHROME_ROWS: readonly ChromeRow[] = [
+  // COPERA: the full-window Copera sign-in screen keeps the macOS window draggable by its top band.
+  {
+    file: 'client/ui-copera-account/src/client/LoginGate.module.css',
+    selector: '.dragBand',
+    markup: 'client/ui-copera-account/src/client/LoginGate.tsx',
+    height: ['height', '52px'],
+  },
   {
     file: 'client/ui-settings-account/src/client/OnboardingSurface.module.css',
     selector: '.dragBand',

@@ -12,21 +12,30 @@ export const name = 'host-authentication-token'
 /** Services owning request admission and the persistent signing key. */
 export const inject = ['connection', 'connection.authentication', 'credentials']
 
-/** Default browser and API cookie lifetime. */
+// COPERA: a product names its own startup line.
+/** Entry URL label of the `dsh` launcher. */
+const DEFAULT_ENTRY_LABEL = 'dsh web'
+
+/** Default browser and API cookie lifetime, and the label of the printed entry URL. */
 export interface Config {
   /** Absolute cookie lifetime in days; default 30. */
   cookieMaxAgeDays: number
+  // COPERA: a product names its own startup line.
+  /** Label printed before the authenticated entry URL at startup; `dsh web` when omitted. */
+  entryLabel?: string
 }
 
-/** Validate cookie lifetime before preparing the token implementation. */
+/** Validate cookie lifetime and entry label before preparing the token implementation. */
 export const Config: z<Config> = z.object({
   cookieMaxAgeDays: z.natural().min(1).default(30),
+  // COPERA: a product names its own startup line.
+  entryLabel: z.string().min(1).default(DEFAULT_ENTRY_LABEL),
 })
 
 /**
  * Register the token provider and its optional Web transport integration.
  * @param ctx - plugin scope owning the shared Peer and registrations.
- * @param config - validated browser and API cookie lifetime.
+ * @param config - validated browser and API cookie lifetime and entry label.
  */
 export async function apply(ctx: Context, config: Config): Promise<void> {
   const auth = await BrowserAuth.create(ctx[Context.root], ctx.credentials, config.cookieMaxAgeDays)
@@ -151,6 +160,6 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     })
   })
   ctx.on('webserver/entry-url', (baseUrl, entries) => {
-    entries.push({ label: 'dsh web', url: auth.authenticatedUrl(baseUrl), open: true })
+    entries.push({ label: config.entryLabel ?? DEFAULT_ENTRY_LABEL, url: auth.authenticatedUrl(baseUrl), open: true })
   })
 }

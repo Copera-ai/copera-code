@@ -24,7 +24,8 @@ interface ProxyOperations {
   readonly ownerAlive: (pid: number) => boolean
 }
 
-const LOCK = join(homedir(), 'Library', 'Caches', 'com.deepseek.harness', 'notarization-proxy')
+// COPERA: the product application ID (product-identity.mjs); spelled out because flock-entry loads this module standalone.
+const LOCK = join(homedir(), 'Library', 'Caches', 'ai.copera.code', 'notarization-proxy')
 const RECOVERY = 'pnpm --dir apps/desktop run restore:mac-proxy'
 const NETWORKSETUP = '/usr/sbin/networksetup'
 const operations: ProxyOperations = {

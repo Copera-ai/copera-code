@@ -1,0 +1,52 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/util/copera-launch/README.md
+/:
+  en: af0148f76b42cf3e
+  zh: 73feebced404b0af
+/deepseek-ai-dsh-copera-launch:
+  en: 5413239ed052107f
+  zh: 627bde9f442260ff
+/deepseek-ai-dsh-copera-launch/summary:
+  en: 2d80de6e9cd88284
+  zh: de366ce0c189f2d5
+/deepseek-ai-dsh-copera-launch/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: fcb8aebace5f460f
+/deepseek-ai-dsh-copera-launch/use-this-package:
+  en: bbff250eba0f1b89
+  zh: 0a618f05cc88ee2b
+/deepseek-ai-dsh-copera-launch/use-this-package/run-the-command:
+  en: 9819f92a3eb72148
+  zh: 567e7129c0b01e43
+/deepseek-ai-dsh-copera-launch/use-this-package/resolve-the-environment:
+  en: f71b1dcc251c56cf
+  zh: 806e44df754811c7
+/deepseek-ai-dsh-copera-launch/understand-the-implementation:
+  en: 16016979334d4936
+  zh: 4943fbb0221aa691
+/deepseek-ai-dsh-copera-launch/further-exploration:
+  en: f6075ec5967f993e
+  zh: 4ffbb978bf0a2145
+/deepseek-ai-dsh-copera-launch/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-copera-launch/model-experience/launch-environment:
+  en: a50c209a50661727
+  zh: 456a0981613477da
+/deepseek-ai-dsh-copera-launch/model-experience/launch-environment/what-the-model-sees:
+  en: dcb09d0300b48e6a
+  zh: 2a259b7bbd53ad65
+/deepseek-ai-dsh-copera-launch/model-experience/launch-environment/token-effect:
+  en: ff5f4e6892955541
+  zh: 6023c6034dcbca51
+/deepseek-ai-dsh-copera-launch/model-experience/launch-environment/kv-cache-effect:
+  en: e49801a4de0237fa
+  zh: 2eeecd9b63d052d0
+/deepseek-ai-dsh-copera-launch/known-limitations-and-deferred-work:
+  en: ed54c415abda52c6
+  zh: 0fb0d94743d961c0
+/deepseek-ai-dsh-copera-launch/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: e88aeb617ffb74ea

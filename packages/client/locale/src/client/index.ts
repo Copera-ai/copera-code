@@ -19,6 +19,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import {
   LOCALE_ID_PATTERN, LOCALE_IDS, LOCALE_PREFERENCE_FIELD, LOCALE_SETTINGS_NAMESPACE,
   type BuiltInLocaleId, type LocaleId, type LocaleSettings,
+  LOCALE_CATALOG_GLOBAL, parseLocaleCatalog, type LocaleCatalog, // COPERA: deployment language catalog
 } from '../locale-settings.ts'
 import { en, ja, es, fr, de, ru, pt, zh, type CommonKey } from '../locales/index.ts'
 import {
@@ -32,7 +33,7 @@ import { createLanguageRowStore } from './settings-store.ts'
 export type { LanguageRowComponentProps, LanguageRowInjected } from './LanguageRow.tsx'
 export type { LanguageOptionRow, LanguageRowState } from './settings-store.ts'
 export type { CommonKey } from '../locales/index.ts'
-export type { BuiltInLocaleId, LocaleId, LocaleSettings } from '../locale-settings.ts'
+export type { BuiltInLocaleId, LocaleCatalog, LocaleId, LocaleSettings } from '../locale-settings.ts' // COPERA: LocaleCatalog
 
 // The translate currency lives in ui-slots (the render machinery synthesizes
 // the seat); re-exported here so dictionary owners import one package.
@@ -165,6 +166,12 @@ function syncDocumentLanguage(snapshot: LocaleSnapshot): void {
  */
 export class LocaleRuntime {
   private dicts = new Map<string, Map<string, LocaleDict>>()
+  // COPERA: override layers by namespace and locale key, in application order.
+  private overrides = new Map<string, Map<string, LocaleDict[]>>()
+  // COPERA: selectable locale keys in display order; undefined selects every registered language.
+  private readonly allowed: readonly string[] | undefined
+  // COPERA: display labels by locale key.
+  private readonly labels: ReadonlyMap<string, string>
   private bound = new Map<string, Translate>()
   private catalog = new Map<string, LocaleDefinition>()
   private fallbackChains = new Map<string, readonly LocaleId[]>()
@@ -183,10 +190,19 @@ export class LocaleRuntime {
    * @param host - durable preference scope owned by the providing plugin;
    * absent compositions (standalone dictionary registries) stay process-local.
    * @param bootstrap - native initialization; absent in ordinary browsers.
+   * @param catalog - deployment language catalog; absent keeps every registered language and its own label.
    */
-  constructor(ctx: ClientContext, host?: ConfigForm<LocaleSettings>, private readonly bootstrap?: LocaleBootstrap) {
+  constructor(
+    ctx: ClientContext,
+    host?: ConfigForm<LocaleSettings>,
+    private readonly bootstrap?: LocaleBootstrap,
+    catalog?: LocaleCatalog, // COPERA: deployment language catalog
+  ) {
     this.ctx = ctx
     this.host = host
+    // COPERA: normalize the catalog to locale keys.
+    this.allowed = catalog?.languages?.map(localeKey)
+    this.labels = new Map(Object.entries(catalog?.labels ?? {}).map(([id, label]) => [localeKey(id), label]))
     for (const locale of BUILT_IN_LOCALES) this.catalog.set(localeKey(locale.id), locale)
     const locales = this.localeList()
     this.provisional = resolveInitialLocale(locales, bootstrap?.languages)
@@ -254,7 +270,7 @@ export class LocaleRuntime {
    * @param id - a registered locale id; unknown ids throw.
    */
   setLocale(id: string): void {
-    const match = this.catalog.get(localeKey(id))
+    const match = this.selectable(id) // COPERA: only languages of the deployment catalog
     if (match === undefined) throw new Error(`locale "${id}" is not registered`)
     this.preference = match.id
     if (this.snapshot.active !== match.id) this.publish(match.id, true)
@@ -323,12 +339,31 @@ export class LocaleRuntime {
   /** Resolve an explicit preference only while its definition is available. */
   private resolveActive(): LocaleId {
     if (this.preference === undefined) return this.provisional
-    return this.catalog.get(localeKey(this.preference))?.id ?? this.provisional
+    return this.selectable(this.preference)?.id ?? this.provisional // COPERA: only languages of the deployment catalog
   }
 
-  /** Snapshot the catalog in registration order. */
+  // COPERA: a registered definition the deployment catalog lets the user select.
+  /** Look up a registered language the deployment catalog allows. */
+  private selectable(id: string): LocaleDefinition | undefined {
+    const key = localeKey(id)
+    if (this.allowed !== undefined && !this.allowed.includes(key)) return undefined
+    return this.catalog.get(key)
+  }
+
+  /**
+   * Snapshot the selectable languages: registration order without a catalog,
+   * otherwise the catalog's order and labels. Unlisted definitions stay in the
+   * registry for fallback chains.
+   */
   private localeList(): readonly LocaleDefinition[] {
-    return Object.freeze([...this.catalog.values()])
+    // COPERA: filter, order, and relabel by the deployment catalog.
+    const definitions = this.allowed === undefined
+      ? [...this.catalog.values()]
+      : this.allowed.flatMap(key => this.catalog.get(key) ?? [])
+    return Object.freeze(definitions.map((definition) => {
+      const label = this.labels.get(localeKey(definition.id))
+      return label === undefined ? definition : Object.freeze({ ...definition, label })
+    }))
   }
 
   /** Fail a new definition whose complete fallback path does not reach English. */
@@ -467,6 +502,43 @@ export class LocaleRuntime {
     return t
   }
 
+  // COPERA: deployment overrides of registered dictionary entries.
+  /**
+   * Layer replacement entries over one namespace's dictionary in one locale.
+   * Lookup consults the layers, newest first, before the registered
+   * dictionary of the same locale, then continues the fallback chain. A layer
+   * may arrive before or after the dictionary it covers and never occupies
+   * the namespace's single registration seat. Adding or removing a layer
+   * bumps the revision so mounted outlets re-render.
+   * @param ns - namespace whose entries are replaced.
+   * @param language - locale tag the entries apply to.
+   * @param entries - replacement templates by key.
+   * @returns idempotent disposer removing exactly this layer.
+   * @throws when `language` is not a BCP 47-style tag.
+   */
+  override(ns: string, language: string, entries: LocaleDict): () => void {
+    if (!LOCALE_ID_PATTERN.test(language)) throw new Error(`locale id "${language}" is not a BCP 47-style tag`)
+    let locales = this.overrides.get(ns)
+    if (locales === undefined) {
+      locales = new Map()
+      this.overrides.set(ns, locales)
+    }
+    const key = localeKey(language)
+    const layers = locales.get(key) ?? []
+    locales.set(key, [...layers, entries])
+    this.publish(this.snapshot.active, false)
+    let removed = false
+    return () => {
+      if (removed) return
+      removed = true
+      const current = this.overrides.get(ns)?.get(key)
+      /* v8 ignore next -- defensive: layer lists are created on override and only shrink here. */
+      if (current === undefined) return
+      current.splice(current.indexOf(entries), 1)
+      this.publish(this.snapshot.active, false)
+    }
+  }
+
   private translate(ns: string, key: string, params?: Record<string, unknown>): string {
     const chain = this.fallbackChain(this.snapshot.active)
     const template = this.lookup(ns, key, chain)
@@ -479,7 +551,10 @@ export class LocaleRuntime {
 
   private lookup(ns: string, key: string, chain: readonly LocaleId[]): string | undefined {
     const locales = this.dicts.get(ns)
+    const layers = this.overrides.get(ns) // COPERA: override layers win within each locale
     for (const locale of chain) {
+      const overridden = layers?.get(localeKey(locale))?.findLast(layer => layer[key] !== undefined)?.[key]
+      if (overridden !== undefined) return overridden
       const value = locales?.get(localeKey(locale))?.[key]
       if (value !== undefined) return value
     }
@@ -579,7 +654,9 @@ export async function apply(ctx: ClientContext): Promise<void> {
     bootstrap = parseLocaleBootstrap(value)
   }
   const host = ctx.configForms.get<LocaleSettings>(LOCALE_SETTINGS_NAMESPACE)
-  const locale = new LocaleRuntime(ctx, host, bootstrap)
+  // COPERA: the Host index render injects the deployment language catalog when one is configured.
+  const catalog = parseLocaleCatalog((globalThis as Partial<Record<typeof LOCALE_CATALOG_GLOBAL, unknown>>)[LOCALE_CATALOG_GLOBAL])
+  const locale = new LocaleRuntime(ctx, host, bootstrap, catalog)
   for (const [id, label] of [['ja', '日本語'], ['es', 'Español'], ['fr', 'Français'], ['de', 'Deutsch'], ['ru', 'Русский'], ['pt', 'Português']] as const) {
     ctx.effect(() => locale.addLanguage({ id, label, fallback: 'en' }), `locale: ${id} language`)
   }

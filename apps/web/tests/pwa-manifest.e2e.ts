@@ -4,11 +4,15 @@ import { join } from 'node:path'
 import { expect, it } from 'vitest'
 import { chromium, type Page } from 'playwright'
 import {
-  APP_ICON_VARIANTS, ICON_OUTPUT_DIRECTORY, MASKABLE_ARTWORK_SCALE, MASKABLE_SAFE_RADIUS_RATIO,
-  TILE_SOURCE, renderAppIcons, tileDocument,
+  APP_ICON_VARIANTS, MASKABLE_ARTWORK_SCALE, MASKABLE_SAFE_RADIUS_RATIO,
+  renderAppIcons, tileDocument,
 } from '../scripts/render-app-icons.ts'
 
 const DIST_ROOT = fileURLToPath(new URL('../dist', import.meta.url))
+
+// COPERA: the shipped install icons are rendered from the Copera symbol; the generator's output is checked against
+// the upstream tile it was written for.
+const TILE_SOURCE = fileURLToPath(new URL('fixtures/app-icons/upstream-tile.svg', import.meta.url))
 
 async function pixels(page: Page, url: string, size: number) {
   return page.evaluate(async ({ url, size }) => {
@@ -66,7 +70,7 @@ it('ships install metadata with the built web application', async () => {
   expect(index).toContain('<link rel="manifest" href="./manifest.webmanifest" />')
   expect(index).toContain('<link rel="apple-touch-icon" href="./apple-touch-icon.png" />')
   expect(index).toContain('<meta name="mobile-web-app-capable" content="yes" />')
-  expect(index).toContain('<meta name="apple-mobile-web-app-title" content="DSH" />')
+  expect(index).toContain('<meta name="apple-mobile-web-app-title" content="Copera Code" />')
   // No `theme-color` here: `ThemePresenter` owns the single metadata node and
   // follows the resolved in-application theme, which a static media query
   // cannot. The manifest's `theme_color` covers the surrounding chrome before
@@ -77,15 +81,15 @@ it('ships install metadata with the built web application', async () => {
   // so only an absent `id`, which defaults to the resolved `start_url`, gives
   // each mount its own identity. `public-mount.e2e.ts` reads the resolved form.
   expect(manifest).toEqual({
-    name: 'DeepSeek Harness',
-    short_name: 'DSH',
+    name: 'Copera Code',
+    short_name: 'Copera Code',
     start_url: './',
     scope: './',
     // `standalone` keeps the phone's status bar; `fullscreen` hides it and the
     // navigation bar, which strands a chat surface with no clock or battery.
     display: 'standalone',
-    background_color: '#ffffff',
-    theme_color: '#ffffff',
+    background_color: '#050505',
+    theme_color: '#050505',
     icons: [
       { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
@@ -111,7 +115,13 @@ it('decodes every generated and shipped icon with full artwork and its intended 
       expect(reference.ink).toBeGreaterThan(0)
       const scale = variant.kind === 'maskable' ? MASKABLE_ARTWORK_SCALE : 1
       const cornerAlpha = variant.kind === 'rounded' ? 0 : 255
-      for (const bytes of [png, await readFile(join(DIST_ROOT, variant.file))]) {
+      // COPERA: the shipped Copera icon keeps the variant's size and corner treatment over full artwork.
+      const shipped = await pixels(page, pngUrl(await readFile(join(DIST_ROOT, variant.file))), variant.size)
+      expect([shipped.width, shipped.height], variant.file).toEqual([variant.size, variant.size])
+      expect(shipped.corners, variant.file).toEqual(Array.from({ length: 4 }, () => cornerAlpha))
+      expect(shipped.edgeCenters, variant.file).toEqual([255, 255, 255, 255])
+      expect(shipped.ink, variant.file).toBeGreaterThan(0)
+      for (const bytes of [png]) {
         const image = await pixels(page, pngUrl(bytes), variant.size)
         expect([image.width, image.height], variant.file).toEqual([variant.size, variant.size])
         expect(image.corners, variant.file).toEqual(Array.from({ length: 4 }, () => cornerAlpha))
@@ -134,17 +144,19 @@ it('ships fixed-color favicons selected by document media queries', async () => 
   const light = await readFile(join(DIST_ROOT, 'favicon.svg'), 'utf8')
   const dark = await readFile(join(DIST_ROOT, 'favicon-dark.svg'), 'utf8')
   expect(light).not.toContain('<style>')
-  expect(light).toContain('fill="#000"')
-  expect(dark).toContain('fill="#fff"')
-  expect(dark.replace('fill="#fff"', 'fill="#000"')).toBe(light)
+  // COPERA: both schemes use the Copera symbol, whose blue tile reads on either background.
+  expect(light).toContain('#3463F3')
+  expect(dark).toBe(light)
 })
 
 it('preserves fractional coverage along the Apple icon curves', async () => {
   const browser = await chromium.launch({ headless: true })
   try {
     const page = await browser.newPage()
-    const png = await readFile(join(ICON_OUTPUT_DIRECTORY, 'apple-touch-icon.png'))
-    const tile = tileDocument(await readFile(TILE_SOURCE, 'utf8'))
+    // COPERA: the generator's Apple icon, since the shipped one is rendered from the Copera symbol.
+    const source = await readFile(TILE_SOURCE, 'utf8')
+    const png = (await renderAppIcons(source)).find(({ variant }) => variant.file === 'apple-touch-icon.png')!.png
+    const tile = tileDocument(source)
     const [generated, direct] = await page.evaluate(async sources => Promise.all(sources.map(async (source) => {
       const image = new Image()
       image.src = source
@@ -178,12 +190,14 @@ it('preserves fractional coverage along the Apple icon curves', async () => {
   } finally { await browser.close() }
 })
 
-it('keeps the shipped maskable artwork inside its opaque platform safe zone', async () => {
+it('keeps the generated maskable artwork inside its opaque platform safe zone', async () => {
   const browser = await chromium.launch({ headless: true })
   try {
     const page = await browser.newPage()
-    const maskable = await readFile(join(DIST_ROOT, 'icon-maskable-512.png'))
-    const tile = tileDocument(await readFile(TILE_SOURCE, 'utf8'))
+    // COPERA: the generator's maskable icon; the shipped one is rendered from the Copera symbol.
+    const source = await readFile(TILE_SOURCE, 'utf8')
+    const maskable = (await renderAppIcons(source)).find(({ variant }) => variant.kind === 'maskable')!.png
+    const tile = tileDocument(source)
     const size = APP_ICON_VARIANTS.find(variant => variant.kind === 'maskable')!.size
     const scaled = await pixels(page, pngUrl(maskable), size)
     const unscaled = await pixels(page, svgUrl(tile), size)

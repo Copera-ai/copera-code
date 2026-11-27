@@ -157,7 +157,7 @@ int wmain(int argc, wchar_t** argv) {
     ZeroMemory(contents, sizeof(contents));
     assert(ReadFile(reportFile, contents, sizeof(contents) - 1, &length, nullptr));
     CloseHandle(reportFile);
-    assert(strstr(contents, "Validate DSH_HOME"));
+    assert(strstr(contents, "Validate COPERA_CODE_HOME"));
     assert(strstr(contents, "relative/home"));
     assert(DeleteFileW(report.c_str()));
     assert(RemoveDirectoryW(installation.c_str()));

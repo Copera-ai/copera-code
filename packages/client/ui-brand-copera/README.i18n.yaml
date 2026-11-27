@@ -1,0 +1,55 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/client/ui-brand-copera/README.md
+/:
+  en: 07bdd54abaa4f13e
+  zh: 7b6b542f95a25d19
+/deepseek-ai-dsh-client-ui-brand-copera:
+  en: 169d8efec49fee90
+  zh: 447478b068d40085
+/deepseek-ai-dsh-client-ui-brand-copera/summary:
+  en: 0bc30a464c27a828
+  zh: 20ccaf09a7a8f2ab
+/deepseek-ai-dsh-client-ui-brand-copera/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5b6bd00fce5371c3
+/deepseek-ai-dsh-client-ui-brand-copera/use-this-package:
+  en: 0e5299dc5fda7b2b
+  zh: 2d2714ae94de34fc
+/deepseek-ai-dsh-client-ui-brand-copera/use-this-package/what-changes-on-screen:
+  en: a8d8b3f494b7fa5a
+  zh: 8056307fab5f4937
+/deepseek-ai-dsh-client-ui-brand-copera/use-this-package/build-profile-and-browser-title:
+  en: 50117d0bb17b3024
+  zh: 7edf2b416690f8dc
+/deepseek-ai-dsh-client-ui-brand-copera/use-this-package/regenerating-the-font-stylesheet:
+  en: 56f8cd10e7c8676f
+  zh: c6918c8747b28828
+/deepseek-ai-dsh-client-ui-brand-copera/understand-the-implementation:
+  en: 76064c33c428e081
+  zh: 3010f3634980847b
+/deepseek-ai-dsh-client-ui-brand-copera/further-exploration:
+  en: e449f3be92f81d96
+  zh: f2d776c4e7234509
+/deepseek-ai-dsh-client-ui-brand-copera/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-client-ui-brand-copera/model-experience/brand-presentation:
+  en: 93013a00ac9d380a
+  zh: fadc61db3d7f5b90
+/deepseek-ai-dsh-client-ui-brand-copera/model-experience/brand-presentation/what-the-model-sees:
+  en: beda5eb6872ea161
+  zh: d4b5ed11f960316e
+/deepseek-ai-dsh-client-ui-brand-copera/model-experience/brand-presentation/token-effect:
+  en: 63e852f864e41719
+  zh: 607644e2ca185b1d
+/deepseek-ai-dsh-client-ui-brand-copera/model-experience/brand-presentation/kv-cache-effect:
+  en: ca75c51c89c2c9b0
+  zh: 696d26adaf4eda6d
+/deepseek-ai-dsh-client-ui-brand-copera/known-limitations-and-deferred-work:
+  en: 0621e3692c1c8844
+  zh: 536d8ea0c1b5230a
+/deepseek-ai-dsh-client-ui-brand-copera/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 8ec3e73528ddb1a6

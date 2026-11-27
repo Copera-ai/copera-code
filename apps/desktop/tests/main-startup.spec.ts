@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 
 import type { IpcMainInvokeEvent } from 'electron'
 import { join } from 'node:path'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import type { MenuItemConstructorOptions, MessageBoxOptions } from 'electron'
 import { DESKTOP_IPC, type DesktopUpdateState } from '../src/ipc.ts'
 import { WELCOME_IPC } from '../src/welcome-api.ts'
@@ -60,6 +60,7 @@ const harness = await vi.hoisted(async () => {
   let quitCompleted = deferred()
   let policyBlocked = deferred()
   let embeddedPolicy: unknown
+  let manifestUpdates: string | undefined
   let closeWindowsOnQuit = false
   let updateState: DesktopUpdateState = { phase: 'idle' }
   let platformDisposeDeferred: ReturnType<typeof deferred> | undefined
@@ -266,6 +267,8 @@ const harness = await vi.hoisted(async () => {
     get policyBlocked() { return policyBlocked },
     get embeddedPolicy() { return embeddedPolicy },
     set embeddedPolicy(value: unknown) { embeddedPolicy = value },
+    get manifestUpdates() { return manifestUpdates },
+    set manifestUpdates(value: string | undefined) { manifestUpdates = value },
     nextNavigation() { navigated = deferred(); return navigated.promise },
     nextHostStart() { hostStarted = deferred(); return hostStarted.promise },
     deferPlatformDispose() { platformDisposeDeferred = deferred(); return platformDisposeDeferred },
@@ -298,6 +301,7 @@ const harness = await vi.hoisted(async () => {
       navigated = deferred(); dialogShown = deferred(); quitCompleted = deferred()
       policyBlocked = deferred()
       embeddedPolicy = undefined
+      manifestUpdates = undefined
       fileDrag.install.mockReset()
       fileDrag.dispose.mockReset().mockResolvedValue(undefined)
       platformDisposeDeferred = undefined
@@ -349,7 +353,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   const original = await importOriginal<typeof import('node:fs/promises')>()
   return { ...original, readFile: vi.fn((path: Parameters<typeof original.readFile>[0], encoding?: 'utf8') => {
     if (path === join('desktop-test-app', 'package.json')) {
-      return Promise.resolve(JSON.stringify({ dshDesktopAppId: 'com.deepseek.dsh', dshMandatoryUpdatePolicy: harness.embeddedPolicy }))
+      return Promise.resolve(JSON.stringify({ dshDesktopAppId: 'ai.copera.code', dshMandatoryUpdatePolicy: harness.embeddedPolicy, dshDesktopUpdates: harness.manifestUpdates }))
     }
     return encoding === undefined ? original.readFile(path) : original.readFile(path, encoding)
   }) }
@@ -490,6 +494,9 @@ beforeEach(() => {
   vi.stubEnv('DSH_DESKTOP_MANDATORY_UPDATE_CONFIG', undefined)
   vi.stubEnv('DSH_DESKTOP_UPDATE_JOURNAL_DIR', undefined)
   vi.stubEnv('DSH_CLIENT_VERSION', '1.2.3')
+  // Loading main maps the product environment into process.env; stubbing restores every mapped name.
+  for (const name of ['DSH_HOME', 'DSH_TELEMETRY_DISABLED', 'DSH_COPERA_TOKEN', 'DSH_COPERA_API_ORIGIN',
+    'COPERA_CODE_HOME', 'COPERA_CODE_TOKEN', 'COPERA_CODE_API_ORIGIN']) vi.stubEnv(name, undefined)
   harness.analyticsEnabled = true
 })
 
@@ -828,7 +835,6 @@ describe('desktop main startup', () => {
     const visible = menu.filter(item => item.visible !== false)
     expect(visible.map(item => item.role === 'quit' ? 'quit' : item.label ?? item.type)).toEqual([
       messages.aboutMenu, 'separator', messages.settingsMenu, 'separator', messages.checkUpdatesMenu,
-      ...platform === 'linux' ? [] : [messages.cliCommandMenu],
       'separator', ...packaged ? [] : [messages.reloadPageMenu, messages.restartAppHostMenu],
       messages.toggleDevToolsMenu, 'separator',
       ...platform === 'darwin' ? [messages.hideApplication, messages.hideOtherApplications, messages.showAllApplications, 'separator'] : [],
@@ -888,7 +894,7 @@ describe('desktop main startup', () => {
     await vi.advanceTimersByTimeAsync(0)
     const zh = locale === 'zh-CN'
     expect(harness.dialog.showMessageBox).toHaveBeenLastCalledWith(expect.objectContaining({
-      type: 'info', title: zh ? '关于 DeepSeek Harness' : 'About DeepSeek Harness', message: 'DeepSeek Harness',
+      type: 'info', title: zh ? '关于 Copera Code' : 'About Copera Code', message: 'Copera Code',
       detail: zh ? '版本 V1.0.0' : 'Version V1.0.0', buttons: [zh ? '确定' : 'OK'], cancelId: 0,
     }))
     // A dialog that cannot open is logged, not surfaced as an unhandled rejection.
@@ -1397,7 +1403,7 @@ describe('desktop main startup', () => {
     expect(() => handler(event, 'application', NaN, 34)).toThrow('invalid popup request')
     const application = handler(event, 'application', 48, 34)
     expect(harness.menu.buildFromTemplate.mock.lastCall![0].map(item => item.label ?? item.type)).toEqual([
-      '关于 DeepSeek Harness', 'separator', '设置…', 'separator', '检查更新…', '管理 dsh 命令…', 'separator', zh.toggleDevToolsMenu, 'separator', '退出',
+      '关于 Copera Code', 'separator', '设置…', 'separator', '检查更新…', 'separator', zh.toggleDevToolsMenu, 'separator', '退出',
     ])
     expect(harness.popup.mock.lastCall![0]).toMatchObject({ window, x: 48, y: 34 })
     expect(harness.popup.mock.lastCall![0].callback).toBeTypeOf('function')
@@ -1445,7 +1451,7 @@ describe('desktop main startup', () => {
       : undefined)
     const application = template[0]!.submenu as MenuItemConstructorOptions[]
     expect(application.filter(item => item.visible !== false).map(describeItem)).toEqual(platform === 'darwin'
-      ? ['about', 'separator', en.settingsMenu, 'separator', en.checkUpdatesMenu, en.cliCommandMenu, 'separator', 'toggleDevTools', 'separator', 'hide', 'hideOthers', 'unhide', 'separator', 'quit']
+      ? ['about', 'separator', en.settingsMenu, 'separator', en.checkUpdatesMenu, 'separator', 'toggleDevTools', 'separator', 'hide', 'hideOthers', 'unhide', 'separator', 'quit']
       : ['about', 'separator', en.settingsMenu, 'separator', en.checkUpdatesMenu, 'separator', 'toggleDevTools', 'separator', 'quit'])
     expect(harness.menu.setApplicationMenu).toHaveBeenCalledOnce()
   })
@@ -1469,7 +1475,7 @@ describe('desktop main startup', () => {
   it.each([
     ['darwin', 'Command+,'],
     ['win32', 'Control+,'],
-  ] as const)('gates Settings menu availability across welcome, workspace, window restore, sign-out, and mandatory updates (%s)', async (platform, expectedAccelerator) => {
+  ] as const)('gates Settings menu availability across startup, workspace, window restore, sign-out, and mandatory updates (%s)', async (platform, expectedAccelerator) => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue(platform)
     harness.embeddedPolicy = { origin: 'https://policy.example.com', allowedPageOrigins: ['https://downloads.example.com'] }
     const policyFetch = vi.fn<typeof fetch>()
@@ -1480,24 +1486,17 @@ describe('desktop main startup', () => {
     harness.prepared.resolve()
     await harness.hostStarted.promise
     const host = harness.hosts[0]!
-    host.fetch.mockResolvedValueOnce(Response.json({ loggedIn: false, hasApiKey: false, writable: true, localePreference: null, themePreference: 'system' }))
-    host.ready.resolve()
-    await vi.waitFor(() => { expect(harness.windows).toHaveLength(2) })
+    // COPERA: no credential still opens the workspace directly; the native welcome never appears.
+    host.fetch.mockResolvedValue(Response.json({ loggedIn: false, hasApiKey: false, writable: true, localePreference: null, themePreference: 'system' }))
     const mainWindow = harness.windows[0]!
-    const welcomeWindow = harness.windows[1]!
     const registered = await Promise.resolve(invoke(DESKTOP_IPC.shortcutsGet, 'app', [
       { id: 'settings.open', defaults: { 'desktop:macos': { code: 'Comma', modifiers: ['primary'] }, 'desktop:windows': { code: 'Comma', modifiers: ['primary'] } } },
     ])) as { revision: string }
-
     const settingsItem = () => applicationMenuItems().find(item => item.id === 'dsh-settings-open')!
     expect(settingsItem()).toMatchObject({ label: en.settingsMenu, enabled: false, accelerator: expectedAccelerator })
-    mainWindow.show.mockClear()
-    mainWindow.webContents.send.mockClear()
-    ;(settingsItem().click as () => void)()
-    expect(mainWindow.show).not.toHaveBeenCalled()
-    expect(mainWindow.webContents.send).not.toHaveBeenCalled()
-
-    await harness.handlers.get(WELCOME_IPC.skip)!({ sender: welcomeWindow.webContents, senderFrame: welcomeWindow.webContents.mainFrame })
+    host.ready.resolve()
+    await mainWindow.shown.promise
+    expect(harness.windows).toHaveLength(1)
     expect(settingsItem()).toMatchObject({ label: en.settingsMenu, enabled: true, accelerator: expectedAccelerator })
 
     mainWindow.minimized = true
@@ -1515,15 +1514,10 @@ describe('desktop main startup', () => {
       kind: 'menu', commandId: 'settings.open', revision: registered.revision,
     })
 
-    host.fetch.mockResolvedValueOnce(Response.json({ loggedIn: false, hasApiKey: false }))
     harness.publishAccount({ status: 'credential-stored', attempt: null, links: { usageUrl: '', topUpUrl: '' } })
     harness.publishAccount({ status: 'signed-out', attempt: null, links: { usageUrl: '', topUpUrl: '' } })
-    await vi.waitFor(() => { expect(settingsItem().enabled).toBe(false) })
-    expect(harness.windows.length).toBeGreaterThanOrEqual(3)
-    const reopenedWelcome = harness.windows[2]!
-    await harness.handlers.get(WELCOME_IPC.skip)!({
-      sender: reopenedWelcome.webContents, senderFrame: reopenedWelcome.webContents.mainFrame,
-    })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(harness.windows).toHaveLength(1)
     expect(settingsItem().enabled).toBe(true)
 
     policyFetch.mockResolvedValueOnce(Response.json({ code: 40005,
@@ -3166,6 +3160,87 @@ describe('desktop main startup', () => {
     expect(host.stop).toHaveBeenCalledTimes(1)
     expect(window.urls).toEqual(['dsh-app://app/'])
     expect(harness.windows).toHaveLength(1)
+  })
+
+  it('starts the Host with the Copera product environment instead of the inherited one', async () => {
+    vi.stubEnv('DSH_HOME', '/home/u/.dsh')
+    vi.stubEnv('DSH_TELEMETRY_DISABLED', '0')
+    vi.stubEnv('COPERA_CODE_TOKEN', 'copera-token')
+    vi.stubEnv('DSH_COPERA_API_ORIGIN', 'https://inherited.example.test')
+    const host = await readyForUpdate()
+    expect(host.environment).toMatchObject({
+      DSH_HOME: join(homedir(), '.copera-code'), DSH_TELEMETRY_DISABLED: '1', DSH_COPERA_TOKEN: 'copera-token',
+      DSH_TEST_LOGIN_SHELL: 'login',
+    })
+    expect(host.environment).not.toHaveProperty('DSH_COPERA_API_ORIGIN')
+    expect(harness.loginShell.mock.calls[0]![0]).toMatchObject({ DSH_HOME: join(homedir(), '.copera-code') })
+  })
+
+  it('reports an invalid Copera API origin without starting a Host', async () => {
+    vi.stubEnv('COPERA_CODE_API_ORIGIN', 'http://api.example.test')
+    await import('../src/main.ts')
+    await harness.dialogShown.promise
+    expect(harness.hosts).toHaveLength(0)
+    expect((harness.dialog.showMessageBox.mock.calls[0]![0] as { detail: string }).detail)
+      .toContain('COPERA_CODE_API_ORIGIN must be an https:// URL')
+  })
+
+  it('sends Copera sign-in to the system browser and keeps the upstream rule for other links', async () => {
+    await readyForUpdate()
+    const openWindow = harness.windows[0]!.webContents.setWindowOpenHandler.mock.calls[0]![0] as
+      (details: { url: string }) => { action: string }
+    const authorize = 'https://api.copera.ai/oauth/authorize?client_id=copera-code&redirect_uri=http%3A%2F%2F127.0.0.1%3A3080%2Foauth%2Fcallback'
+    expect(openWindow({ url: authorize })).toEqual({ action: 'deny' })
+    expect(harness.openExternal).toHaveBeenLastCalledWith(authorize)
+    expect(openWindow({ url: 'https://other.example.test/page' })).toEqual({ action: 'deny' })
+    expect(harness.openExternal).toHaveBeenLastCalledWith('https://other.example.test/page')
+    harness.openExternal.mockClear()
+    expect(openWindow({ url: 'file:///etc/hosts' })).toEqual({ action: 'deny' })
+    expect(harness.openExternal).not.toHaveBeenCalled()
+  })
+
+  it('registers and answers only the copera-code URL scheme', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    await readyForUpdate()
+    expect(harness.app.setAsDefaultProtocolClient).toHaveBeenCalledExactlyOnceWith('copera-code')
+    const window = harness.windows[0]!
+    await window.shown.promise
+    window.show.mockClear()
+    const openUrl = (url: string): void => { harness.app.emit('open-url', { preventDefault: vi.fn() }, url) }
+    openUrl('dsh://open')
+    expect(window.show).not.toHaveBeenCalled()
+    openUrl('copera-code://open')
+    expect(window.show).toHaveBeenCalledOnce()
+  })
+
+  it.each(['darwin', 'win32'] as const)('omits update checks and the terminal command item when packaged without updates (%s)', async (platform) => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue(platform)
+    harness.manifestUpdates = 'off'
+    await readyForUpdate()
+    harness.powerMonitor.emit('resume')
+    harness.windows[0]!.emit('focus')
+    await vi.advanceTimersByTimeAsync(0)
+    expect(harness.updateCheck).not.toHaveBeenCalled()
+    const labels = applicationMenuItems().map(item => item.label)
+    expect(labels).not.toContain(en.checkUpdatesMenu)
+    expect(labels).not.toContain(en.cliCommandMenu)
+    await invoke(DESKTOP_IPC.updatesOpen, 'app')
+    expect(harness.updateCheck).not.toHaveBeenCalled()
+    expect(harness.dialog.showMessageBox).not.toHaveBeenCalled()
+  })
+
+  it('opens the workspace without the native welcome when no credential is configured', async () => {
+    await import('../src/main.ts')
+    await harness.preparing.promise
+    harness.prepared.resolve()
+    await harness.hostStarted.promise
+    const host = harness.hosts[0]!
+    host.fetch.mockResolvedValue(Response.json({ loggedIn: false, hasApiKey: false, writable: true, localePreference: null, themePreference: 'system' }))
+    host.ready.resolve()
+    const window = harness.windows[0]!
+    await window.shown.promise
+    expect(harness.windows).toHaveLength(1)
+    expect(harness.handlers.has(WELCOME_IPC.skip)).toBe(false)
   })
 })
 

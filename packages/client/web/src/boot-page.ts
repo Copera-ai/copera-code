@@ -34,7 +34,8 @@ export class BootPage {
     this.root = div(css.boot)
     this.root.dataset.dshBoot = ''
     this.card = div(css.card)
-    this.wordmark = div(css.wordmark, 'HARNESS')
+    // COPERA: Copera Code artifacts (client build profile `copera`) name the product on the boot splash.
+    this.wordmark = div(css.wordmark, process.env.DSH_CLIENT_BUILD_PROFILE === 'copera' ? 'COPERA CODE' : 'HARNESS')
     this.spinner = div(css.spinner)
     this.spinner.dataset.dshBootSpinner = ''
     this.hint = div(css.hint, 'Loading plugins…')

@@ -113,6 +113,17 @@ describe('desktop welcome Web operations', () => {
     await expect(backend.read()).rejects.toThrow('Web RPC failed')
   })
 
+  // COPERA: the upstream `account` service is not mounted in Copera Code.
+  it('reads startup metadata and watches nothing without calling the upstream account service', async () => {
+    const host = transport()
+    const backend = connectDesktopWelcome(url, cookie, host.send)
+    expect(await backend.read()).toMatchObject({ loggedIn: false })
+    const stop = backend.account.watch(vi.fn(), vi.fn(), vi.fn(), vi.fn())
+    stop()
+    await expect(backend.account.state()).rejects.toThrow('upstream account service')
+    expect(host.send.mock.calls.map(([input]) => input).filter(input => input.includes('/api/account/'))).toEqual([])
+  })
+
   it('submits native analytics through authenticated RPC with a bounded request', async () => {
     const host = transport()
     const backend = connectDesktopWelcome(url, cookie, host.send)

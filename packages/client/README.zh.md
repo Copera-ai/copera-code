@@ -52,6 +52,8 @@ kind: "package-group"
 | [`resources/`](resources/README.zh.md) | 统一资源模型：`useResource` 会话标准钩子背后的协议提供方 | `ctx.resources` |
 | [`ui-sidebar-files/`](ui-sidebar-files/README.zh.md) | 工作区文件页，以及停靠与浮动文件预览旁每个分栏一棵的工作区目录树 | — |
 | [`ui-brand-official/`](ui-brand-official/README.zh.md) | 用官方名称与标记填充通用浏览器品牌 slot | — |
+| [`ui-brand-copera/`](ui-brand-copera/README.zh.md) | 用 Copera Code 名称与标记填充浏览器品牌 slot，叠加 Copera 令牌层与 Inter 字体，并覆盖产品名文案 | — |
+| [`ui-copera-account/`](ui-copera-account/README.zh.md) | 基于 `coperaAccount` 呈现 Copera 登录屏幕和侧边栏账户菜单 | — |
 | [`ui-workspace/`](ui-workspace/README.zh.md) | 提供工作区选择与创建界面 | — |
 | [`ui-conversation/`](ui-conversation/README.zh.md) | 展示当前对话及其输入界面 | — |
 | [`ui-chat/`](ui-chat/README.zh.md) | 投影并渲染 Chat 对话 target | — |

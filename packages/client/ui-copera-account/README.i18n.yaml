@@ -1,0 +1,49 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/client/ui-copera-account/README.md
+/:
+  en: 1aac03cd7c0ce717
+  zh: 3acfb68ac80fde78
+/deepseek-ai-dsh-client-ui-copera-account:
+  en: a7ae80f778f138b9
+  zh: 0737b2c24ccc99a8
+/deepseek-ai-dsh-client-ui-copera-account/summary:
+  en: 8cb68e4eaa00fced
+  zh: ad56f576d45373f3
+/deepseek-ai-dsh-client-ui-copera-account/table-of-contents:
+  en: 76368b6b1da79c80
+  zh: 434cf3c1f5db33cd
+/deepseek-ai-dsh-client-ui-copera-account/use-this-package:
+  en: bbe9cef19911f743
+  zh: 7ed2598442415a66
+/deepseek-ai-dsh-client-ui-copera-account/use-this-package/sign-in-screen:
+  en: a5ff337dd367d91b
+  zh: 634f5293ad3aad65
+/deepseek-ai-dsh-client-ui-copera-account/use-this-package/account-menu:
+  en: a81f3eccd205f31e
+  zh: f381732230a9090d
+/deepseek-ai-dsh-client-ui-copera-account/understand-the-implementation:
+  en: 6b18e11858b9afa0
+  zh: 33bf38ba4e4d8eed
+/deepseek-ai-dsh-client-ui-copera-account/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-client-ui-copera-account/model-experience/copera-sign-in-state:
+  en: ca60bcdf56de6fe2
+  zh: 6a69316b12d0c0e7
+/deepseek-ai-dsh-client-ui-copera-account/model-experience/copera-sign-in-state/what-the-model-sees:
+  en: 1ed859f6ac649f7b
+  zh: be30273e2d26067a
+/deepseek-ai-dsh-client-ui-copera-account/model-experience/copera-sign-in-state/token-effect:
+  en: c38b95ae50bc4fc5
+  zh: 2b6d31d3d4044701
+/deepseek-ai-dsh-client-ui-copera-account/model-experience/copera-sign-in-state/kv-cache-effect:
+  en: eb3b948e3f6b3d8d
+  zh: e43d8c3369c5f701
+/deepseek-ai-dsh-client-ui-copera-account/known-limitations-and-deferred-work:
+  en: ac94f0301535260c
+  zh: ef97c3d4bf42d777
+/deepseek-ai-dsh-client-ui-copera-account/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: e88aeb617ffb74ea

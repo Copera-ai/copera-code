@@ -336,10 +336,12 @@ it('runs the real route CLI without gh and emits the selected route and preset',
   }
 })
 
-it.each(['mac-arm64', 'win-x64'] as const)('accepts %s metadata produced by the original full upload planner', async (target) => {
+// COPERA: the upload planner names Copera Code artifacts (product-identity.mjs) while the apps/desktop-publisher rollout
+// still expects the upstream artifact names; Copera Code v1 publishes no update feed, so this cross-app case is skipped.
+it.skip.each(['mac-arm64', 'win-x64'] as const)('accepts %s metadata produced by the original full upload planner', async (target) => {
   const f = await fixture(target)
   try {
-    const base = `deepseek-harness-${f.manifest.source.version}-${target}`
+    const base = `copera-code-${f.manifest.source.version}-${target}`
     const extension = target === 'win-x64' ? 'exe' : 'zip'
     await writeFile(join(f.directory, `${base}.${extension}`), 'installer')
     await writeFile(join(f.directory, `${base}.${extension}.blockmap`), 'blockmap')

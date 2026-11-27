@@ -9,6 +9,9 @@
   },
   "type": "module",
   "main": "lib/main.js",
+  "imports": {
+    "#product-identity": "./scripts/product-identity.mjs"
+  },
   "scripts": {
     "test:installer": "node scripts/test-windows-installer.mjs",
     "build": "tsc -b && pnpm run bundle",
@@ -96,6 +99,7 @@
     "@deepseek-ai/dsh-util-file-drag": "workspace:*",
     "@deepseek-ai/dsh-client-ui-file-actions": "workspace:*",
     "tencentcloud-sdk-nodejs-teo": "4.1.330",
-    "@deepseek-ai/dsh-desktop-publisher": "workspace:*"
+    "@deepseek-ai/dsh-desktop-publisher": "workspace:*",
+    "@deepseek-ai/dsh-copera-launch": "workspace:*"
   }
 }

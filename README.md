@@ -1,77 +1,71 @@
-# DeepSeek Harness
+# Copera Code
 
 English | [中文](README.zh.md)
 
-DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
+Copera Code is an AI coding agent by [Copera](https://app.copera.ai). It is built on [DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness), the open-source agent harness developed by DeepSeek AI, and runs Copera's Shikai models through your Copera account.
 
-It is built on an **everything-is-a-plugin** architecture and powered by [Cordis](https://github.com/cordiverse/cordis), whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512).
+Copera Code is a separate product maintained by Copera. It is not an official DeepSeek Harness release, and DeepSeek does not endorse, sponsor, or operate it. See the [brand guidelines](BRAND_GUIDELINES.md).
 
-Documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
+Developer documentation for Copera: [https://developer.copera.ai](https://developer.copera.ai)
 
-## Developer preview
+## Preview
 
-DeepSeek Harness is in _developer preview_ and iterating rapidly. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
+Copera Code is in preview. Expect breaking changes between versions.
 
 Review the [safety notice](SAFETY.md) before running the project.
 
 ## Run
 
-### Run from `npm`
+### Run from `npm` (coming soon)
 
-Install `Node.js`, then run:
+The npm package is not published yet. Once it is, install `Node.js` and run:
 
 ```sh
-npx @deepseek-ai/dsh web
+npx @copera.ai/code
 ```
-
-The command starts the Web UI at `http://127.0.0.1:3080` by default and opens it in the default browser for a local launch. An SSH launch only prints the host URL because the SSH client or editor owns the local forwarded address. Pass `--no-open` to run the server without opening a browser. See [Web UI guide](docs/user/guide/index.md).
 
 ### Run from source
 
-To run from a repository checkout:
+Install `Node.js` and Corepack-enabled `pnpm` (the versions are pinned in `package.json`), then run from a repository checkout:
 
 ```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
-cd deepseek-harness
+git clone https://github.com/Copera-ai/copera-code.git
+cd copera-code
 pnpm install
 pnpm run build
-pnpm dsh web
+pnpm copera-code
 ```
 
-`pnpm run build` prepares the repository artifacts. `pnpm dsh web` uses those built artifacts without rebuilding.
+`pnpm run build` prepares the repository artifacts. `pnpm copera-code` uses those built artifacts without rebuilding.
 
-## Community and support
+## Sign in
 
-- Submit feedback or bug reports through [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions).
-- Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to your plugin repository for discoverability.
-- Join <a href="https://discord.gg/4MrtZUhpxg">DeepSeek Harness Discord community</a>.
+Choose **Sign in with Copera**. Your browser opens Copera to approve access, then returns to Copera Code.
 
-## Contributing
+For headless or remote use without a browser, create a Copera personal access token that has the Shikai API permission and export it as `COPERA_CODE_TOKEN` before starting Copera Code. Treat the token like a password: do not commit it or put it in a project `.env` file.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+## Data and privacy
+
+Copera Code stores its settings, sign-in credentials, and sessions in `~/.copera-code`. Set `COPERA_CODE_HOME` to use another directory. Copera Code does not read or change the data directory of a DeepSeek Harness installation.
+
+This version sends no telemetry.
+
+## Languages
+
+The interface is available in English and Portuguese (Brazil).
+
+## Relationship to DeepSeek Harness
+
+This repository is a fork of [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness). Copera merges upstream changes regularly; the [upstream sync procedure](copera/docs/upstream-sync.md) and the [list of edits to upstream files](copera/docs/upstream-edits.md) describe how.
 
 ## Development
 
-Start with the [development guide](docs/development.md) and [architecture documentation](docs/architecture.md).
-
-`pnpm run dev:web` builds, serves, and rebuilds client bundles on source edits in one terminal, and `make help` lists the matching Make targets for Web and Desktop; the guide's application commands section owns the full table.
+Start with the [development guide](docs/development.md) and [architecture documentation](docs/architecture.md). Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md).
 
 For agents, follow [AGENTS.md](AGENTS.md).
 
-## Citation
-
-```bibtex
-@misc{deepseek-harness2026,
-  title={DeepSeek Harness: Everything is a Plugin},
-  author={DeepSeek-AI},
-  year={2026},
-  publisher={GitHub},
-  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
-}
-```
-
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Copera Code keeps the upstream license and its copyright notice, Copyright (c) 2026 DeepSeek.
 
 Third-party dependencies and their licenses are disclosed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

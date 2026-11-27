@@ -180,11 +180,9 @@ describe('desktop welcome window', () => {
     expect(electron.handlers.size).toBe(0)
   })
 
-  it('shows the entry after logout only without a separately configured API key', () => {
-    expect(needsWelcome({ loggedIn: true, hasApiKey: false })).toBe(false)
-    expect(needsWelcome({ loggedIn: false, hasApiKey: false })).toBe(true)
-    expect(needsWelcome({ loggedIn: false, hasApiKey: true })).toBe(false)
-    expect(needsWelcome({ loggedIn: true, hasApiKey: true })).toBe(false)
+  // COPERA: Copera Code signs in through the in-app overlay; the native welcome entry is never shown.
+  it.each([[true, false], [false, false], [false, true], [true, true]])('never shows the native entry (loggedIn=%s, hasApiKey=%s)', (loggedIn, hasApiKey) => {
+    expect(needsWelcome({ loggedIn, hasApiKey })).toBe(false)
   })
 })
 

@@ -2,7 +2,7 @@ import type { ProductEvent } from '@deepseek-ai/dsh-client-product-analytics/typ
 /** Native welcome operations using the shared Web authentication and RPC APIs. */
 
 import { randomUUID } from 'node:crypto'
-import { desktopAccountBackend, type DesktopAccountBackend } from './account-backend.ts'
+import type { DesktopAccountBackend } from './account-backend.ts'
 
 /** Metadata needed before the native entry or workspace becomes visible. */
 export interface WelcomeState {
@@ -30,6 +30,15 @@ export interface DesktopWelcomeBackend {
    * @returns A safe write outcome without provider diagnostics.
    */
   save(apiKey: string): Promise<{ ok: boolean }>
+}
+
+/**
+ * Account operations for a profile without the upstream `account` service.
+ * @returns a backend whose commands reject and whose watch opens no stream and reports nothing.
+ */
+function unavailableAccountBackend(): DesktopAccountBackend {
+  const unavailable = (): Promise<never> => Promise.reject(new Error('desktop account: the upstream account service is not part of Copera Code'))
+  return { state: unavailable, start: unavailable, cancel: unavailable, signOut: unavailable, watch: () => () => {} }
 }
 
 function record(value: unknown): value is Record<string, unknown> {
@@ -68,7 +77,9 @@ export function connectDesktopWelcome(
     }
     return envelope.result.value
   }
-  const account = desktopAccountBackend(origin, invoke, cookie)
+  // COPERA: the upstream `account` service is not mounted in Copera Code (its sign-in is the `coperaAccount`
+  // overlay), so the native backend never calls `account/*` and its watch opens no stream.
+  const account = unavailableAccountBackend()
   const settingsAndReference = async () => {
     const settings = await invoke({ namespace: 'settings', method: 'describe', args: {} })
     if (!record(settings) || !Array.isArray(settings.namespaces)) throw new Error('desktop welcome: missing settings namespaces')
@@ -122,7 +133,7 @@ export function connectDesktopWelcome(
     }
     if (ref !== undefined && !record(states[ref])) throw new Error('desktop welcome: missing credential metadata')
     return {
-      loggedIn: (await account.state()).status === 'credential-stored',
+      loggedIn: false, // COPERA: no upstream account service.
       hasApiKey: Object.values(states).some(value => record(value) && value.configured === true),
       writable: ref !== undefined && record(states[ref]) && states[ref].writable === true,
       localePreference: localePreference(namespaces),

@@ -49,6 +49,7 @@ Each package provides one primitive or one data set; open a package page for how
 | [`output-retention/`](output-retention/README.md) | Bounds model-facing output and reports exact omission metadata |
 | [`time/`](time/README.md) | Parses strict instants, local calendars, and caller-reported IANA zones, and holds a millisecond span |
 | [`timeout/`](timeout/README.md) | Deadline arithmetic, signal fusion, and timeout-versus-cancel classification |
+| [`copera-launch/`](copera-launch/README.md) | Maps the `copera-code` command line and `COPERA_CODE_*` variables to a `dsh --profile copera` launch for the npm bin and Copera Code Desktop |
 
 -----
 

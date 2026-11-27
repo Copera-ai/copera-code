@@ -1,0 +1,25 @@
+{
+  "name": "@copera.ai/code",
+  "version": "0.1.0",
+  "description": "Copera Code: the Copera coding agent, running on your computer with a web interface.",
+  "license": "MIT",
+  "type": "module",
+  "homepage": "https://copera.ai",
+  "keywords": [
+    "copera",
+    "coding-agent",
+    "ai"
+  ],
+  "bin": {
+    "copera-code": "bin/copera-code.mjs"
+  },
+  "files": [
+    "bin",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

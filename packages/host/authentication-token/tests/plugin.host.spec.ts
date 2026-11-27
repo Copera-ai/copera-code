@@ -13,7 +13,7 @@ import { BrowserAuth } from '../src/browser-auth.ts'
 const roots: Context[] = []
 afterEach(async () => { for (const ctx of roots.splice(0)) await ctx.fiber.dispose() })
 
-async function mounted(secure = false, before?: (ctx: Context) => void) {
+async function mounted(secure = false, before?: (ctx: Context) => void, entryLabel = 'dsh web') {
   const ctx = new Context(); roots.push(ctx)
   const providers: AuthenticationProvider[] = []
   const routes: WebRoute[] = []
@@ -55,7 +55,7 @@ async function mounted(secure = false, before?: (ctx: Context) => void) {
         providers.push(provider)
         return () => { providers.splice(providers.indexOf(provider), 1) }
       })
-      await Token.apply(scope, { cookieMaxAgeDays: 30 })
+      await Token.apply(scope, { cookieMaxAgeDays: 30, entryLabel })
     },
   })
   await fiber.await()
@@ -226,4 +226,12 @@ it('contributes its complete login URL only while the provider is mounted', asyn
   const after: WebEntryUrl[] = []
   ctx.emit('webserver/entry-url', 'https://public.test/ui/', after)
   expect(after).toEqual([])
+})
+
+// COPERA: a product names its own startup line.
+it('labels the entry URL with the configured entry label', async () => {
+  const { ctx, auth } = await mounted(false, undefined, 'Copera Code')
+  const entries: WebEntryUrl[] = []
+  ctx.emit('webserver/entry-url', 'http://127.0.0.1:3080/', entries)
+  expect(entries).toEqual([{ label: 'Copera Code', url: auth.authenticatedUrl('http://127.0.0.1:3080/'), open: true }])
 })

@@ -5,6 +5,7 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import WebServer from '@deepseek-ai/dsh-host-webserver'
 import { LocalCredentialProvider } from '@deepseek-ai/dsh-credentials-local'
+import { createLaunchEnvironmentSnapshot, DSH_LAUNCH_ENVIRONMENT_KEY } from '@deepseek-ai/dsh-launch-environment'
 import CoperaAccount, { type CoperaAccountState } from '../src/index.ts'
 import { GRANT_KEY, GrantStore } from '../src/grant-store.ts'
 import { startFakeCopera } from './fake-copera.ts'
@@ -16,7 +17,7 @@ afterEach(async () => {
   while (cleanups.length > 0) await cleanups.pop()?.()
 })
 
-async function fixture(options: { envToken?: string } = {}) {
+async function fixture(options: { envToken?: string; launch?: { process: Record<string, string>; project: Record<string, string> } } = {}) {
   const home = await mkdtemp(join(tmpdir(), 'dsh-copera-account-'))
   cleanups.push(() => rm(home, { recursive: true, force: true }))
   const server = await startFakeCopera()
@@ -24,6 +25,12 @@ async function fixture(options: { envToken?: string } = {}) {
   vi.stubEnv('DSH_COPERA_API_ORIGIN', server.origin)
   vi.stubEnv('DSH_COPERA_TOKEN', options.envToken)
   const ctx = new Context()
+  if (options.launch !== undefined) {
+    ctx.provide(DSH_LAUNCH_ENVIRONMENT_KEY, createLaunchEnvironmentSnapshot([
+      { source: 'process', values: { DSH_COPERA_API_ORIGIN: server.origin, ...options.launch.process } },
+      { source: 'project-env', path: join(home, '.env'), values: options.launch.project },
+    ]))
+  }
   const web = ctx.plugin(WebServer, { host: '127.0.0.1', port: 0 })
   await web
   const credentials = ctx.plugin(LocalCredentialProvider, { path: join(home, 'credentials.yaml'), watch: false })
@@ -190,6 +197,14 @@ it('uses the environment token without a grant and never refreshes it', async ()
   expect(await f.service.getState()).toEqual({ status: 'signed-in', via: 'env-token', profile: null, attempt: null, notice: null })
   expect(await f.ctx.coperaTokens.onRejected('env-token-value')).toBeUndefined()
   expect(f.server.requests).toHaveLength(0)
+})
+
+it('reads the token from the launch snapshot\'s process layer and never from a project .env file', async () => {
+  const launched = await fixture({ launch: { process: { DSH_COPERA_TOKEN: 'launch-token' }, project: { DSH_COPERA_TOKEN: 'project-token' } } })
+  expect(await launched.ctx.coperaTokens.getAccessToken()).toBe('launch-token')
+  const projectOnly = await fixture({ launch: { process: {}, project: { DSH_COPERA_TOKEN: 'project-token' } } })
+  expect(await projectOnly.ctx.coperaTokens.getAccessToken()).toBeUndefined()
+  expect((await projectOnly.service.getState()).status).toBe('signed-out')
 })
 
 it('prefers the OAuth grant over the environment token', async () => {
